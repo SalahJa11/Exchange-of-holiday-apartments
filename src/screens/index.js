@@ -6,3 +6,6 @@ export { default as HomeScreen } from "./HomeScreen";
 export { default as AvailableApartments } from "./AvailableApartments";
 export { default as MyBookings } from "./MyBookings";
 export { default as AddMyApartment } from "./AddMyApartment";
+export { default as Chat } from "./Chat";
+export { default as AddMyApartmentForm } from "./AddMyApartmentForm";
+export { default as EditApartment } from "./EditApartment";

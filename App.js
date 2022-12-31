@@ -13,6 +13,9 @@ import {
   AvailableApartments,
   MyBookings,
   AddMyApartment,
+  Chat,
+  AddMyApartmentForm,
+  EditApartment,
 } from "./src/screens";
 
 const Stack = createStackNavigator();
@@ -31,6 +34,7 @@ export default function App() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
           <Stack.Screen name="HomeScreen" component={HomeScreen} />
+          <Stack.Screen name="Chat" component={Chat} />
           <Stack.Screen
             name="AvailableApartments"
             component={AvailableApartments}
@@ -42,6 +46,11 @@ export default function App() {
             name="ResetPasswordScreen"
             component={ResetPasswordScreen}
           />
+          <Stack.Screen
+            name="AddMyApartmentForm"
+            component={AddMyApartmentForm}
+          />
+          <Stack.Screen name="EditApartment" component={EditApartment} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

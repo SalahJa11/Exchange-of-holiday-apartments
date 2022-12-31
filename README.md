@@ -1,2 +1,0 @@
-# Food-Saviors
-Our project

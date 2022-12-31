@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Simple Login Template",
-    "slug": "simple-login-template",
+    "name": "Apartment Exchange",
+    "slug": "Apartment-Exchange",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,10 +23,21 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.salahja.ApartmentExchange",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBpUs36r5kav0hJYAcu8S9CH2axs1RT5zA"
+        }
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "52d6fd55-6fa9-4915-8541-fd71f9ef2cd3"
+      }
     }
   }
 }
