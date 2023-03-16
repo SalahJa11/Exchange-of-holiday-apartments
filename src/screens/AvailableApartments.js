@@ -135,7 +135,9 @@ export default function AvailableApartments({ navigation }) {
               keyboardType="numeric"
             />
           </View>
+          {/* <View></View> */}
         </View>
+
         {/* <Text style={{ fontSize: 15, margin: 5 }}>Name</Text>
         <ReactTextInput
           multiline={true}
