@@ -89,14 +89,14 @@ export default function AddMyApartment({ navigation }) {
     typeof setNoteVisible === "function" ? setNoteVisible(false) : None;
     typeof setWarningVisible === "function" ? setWarningVisible(false) : None;
   };
-  const resetValues = () => {
-    setRooms({ value: apartments[index].Rooms, error: "" });
-    setBathrooms({ value: apartments[index].Bathrooms, error: "" });
-    setBedrooms({ value: apartments[index].Bedrooms, error: "" });
-    setKitchens({ value: apartments[index].Kitchens, error: "" });
-    setName(apartments[index].Name);
-    setDescription(apartments[index].Description);
-  };
+  // const resetValues = () => {
+  //   setRooms({ value: apartments[index].Rooms, error: "" });
+  //   setBathrooms({ value: apartments[index].Bathrooms, error: "" });
+  //   setBedrooms({ value: apartments[index].Bedrooms, error: "" });
+  //   setKitchens({ value: apartments[index].Kitchens, error: "" });
+  //   setName(apartments[index].Name);
+  //   setDescription(apartments[index].Description);
+  // };
   const googleDateToJavaDate = (
     timestamp = { nanoseconds: 0, seconds: 1676563345 }
   ) => {
@@ -381,7 +381,7 @@ export default function AddMyApartment({ navigation }) {
                   paramKey: apartments[index],
                 });
                 setModalVisible(false);
-                resetValues();
+                // resetValues();
                 // setToEdit(true);
               }}
             >
