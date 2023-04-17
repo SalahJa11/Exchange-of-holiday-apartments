@@ -69,19 +69,19 @@ export default function AddMyApartmentForm({ navigation }) {
       if (new Date(currentDate).getTime() > new Date(toDate).getTime()) {
         setToDate(new Date(currentDate).toLocaleDateString("en-US"));
       }
-      console.log("fromDate", fromDate);
+      // console.log("fromDate", fromDate);
     } else if (showPicker2) {
       setToDate(new Date(currentDate).toLocaleDateString("en-US"));
-      console.log("toDate", toDate);
+      // console.log("toDate", toDate);
     }
     setShowPicker(false);
     setShowPicker2(false);
-    console.log(fromDate);
-    console.log(
-      "Selected date: ",
-      currentDate,
-      currentDate.toLocaleDateString("en-US")
-    );
+    // console.log(fromDate);
+    // console.log(
+    //   "Selected date: ",
+    //   currentDate,
+    //   currentDate.toLocaleDateString("en-US")
+    // );
   };
 
   const handleResult = () => {
@@ -106,34 +106,36 @@ export default function AddMyApartmentForm({ navigation }) {
       error = true;
       errorMessage += "Need at least one image\n";
     }
-    if (error == true) {
+    if (error === true) {
       setIsNote(false);
       setAlertTitle("Error");
       setAlertContent(errorMessage);
       setIsAlertVisible(true);
       return;
+    } else {
+      console.log("JUMP");
+      addANewApartment(
+        checked,
+        rooms.value,
+        bedrooms.value,
+        bathrooms.value,
+        kitchens.value,
+        name,
+        description,
+        [location.latitude, location.longitude],
+        imagesAssets,
+        checked2,
+        fromDate,
+        toDate
+      )
+        .then(() => navigation.goBack())
+        .catch((error) => {
+          setIsNote(false);
+          setAlertTitle("Error");
+          setAlertContent(error.message);
+          setIsAlertVisible(true);
+        });
     }
-    addANewApartment(
-      checked,
-      rooms.value,
-      bedrooms.value,
-      bathrooms.value,
-      kitchens.value,
-      name,
-      description,
-      [location.latitude, location.longitude],
-      imagesAssets,
-      checked2,
-      fromDate,
-      toDate
-    )
-      .then(() => navigation.goBack())
-      .catch((error) => {
-        setIsNote(false);
-        setAlertTitle("Error");
-        setAlertContent(error.message);
-        setIsAlertVisible(true);
-      });
   };
   const write = () => {
     return (
@@ -452,7 +454,7 @@ export default function AddMyApartmentForm({ navigation }) {
   };
   return (
     <Background>
-      <BackButton goBack={navigation.goBack} />
+      {/* <BackButton goBack={navigation.goBack} /> */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.ScrollView1}
@@ -462,9 +464,6 @@ export default function AddMyApartmentForm({ navigation }) {
           // zIndex: 3,
         }}
       >
-        <Text style={{ alignSelf: "center", fontSize: 22 }}>
-          Adding a new house
-        </Text>
         <View>
           <Text style={[styles.writeText, { fontSize: 20 }]}>Type</Text>
           <View style={{ flexDirection: "column" }}>

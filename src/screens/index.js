@@ -9,3 +9,8 @@ export { default as AddMyApartment } from "./AddMyApartment";
 export { default as Chat } from "./Chat";
 export { default as AddMyApartmentForm } from "./AddMyApartmentForm";
 export { default as EditApartment } from "./EditApartment";
+export { default as ApartmentInfo } from "./ApartmentInfo";
+export { default as ProfileUpdate } from "./ProfileUpdate";
+export { default as OwnerDetails } from "./OwnerDetails";
+export { default as Chating } from "./Chating";
+export { default as Rating } from "./Rating";

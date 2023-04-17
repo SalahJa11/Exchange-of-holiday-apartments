@@ -1,10 +1,10 @@
 import React from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
-import { Modal } from "react-native-paper";
+import Modal from "react-native-modal";
 import { theme } from "../core/theme";
 export default function Error(props) {
   return (
-    <Modal visible={props.visible}>
+    <Modal visible={props.visible} backdropOpacity={0.7}>
       <View style={styles.alertContainer}>
         <View style={styles.alertContentContainer}>
           <Text style={styles.alertTitleTextStyle}>{props.title}</Text>

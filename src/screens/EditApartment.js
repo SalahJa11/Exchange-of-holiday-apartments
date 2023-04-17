@@ -19,11 +19,11 @@ import { theme } from "../core/theme";
 import Note from "../components/Note";
 import Warning from "../components/Warning";
 import Error from "../components/Error";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Checkbox } from "react-native-paper";
 import { numberValidator } from "../helpers/numberValidator";
 import { editApartment } from "../config/cloud";
+import Processing from "../components/Processing";
 export default function EditApartment({ navigation, route }) {
   const wait = (timeout) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -59,8 +59,6 @@ export default function EditApartment({ navigation, route }) {
     timestamp = { nanoseconds: 0, seconds: 1676563345 }
   ) => {
     console.log("timestamp = ", timestamp);
-    // return "";
-    // timestamp = { nanoseconds: 809000000, seconds: 1676563345 };
     return new Date(
       timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
     ).toLocaleDateString("en-US");
@@ -72,7 +70,6 @@ export default function EditApartment({ navigation, route }) {
     setKitchens({ value: apartment.Kitchens, error: "" });
     setName(apartment.Name);
     setDescription(apartment.Description);
-    // setImagesAssets(apartment.Images);
     setMainImage(apartment.Image);
     console.log(fromDate, toDate);
     setFromDate(googleDateToJavaDate(apartment.FromDate));
@@ -91,6 +88,8 @@ export default function EditApartment({ navigation, route }) {
   const [warningVisible, setWarningVisible] = useState(false);
   const [warningTitle, setWarningTitle] = useState("Warning");
   const [warningVisible2, setWarningVisible2] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const [warningTitle2, setWarningTitle2] = useState("Note");
   const [warningContent, setWarningContent] = useState("Are you sure?");
   const [warningContent2, setWarningContent2] = useState(
@@ -124,6 +123,7 @@ export default function EditApartment({ navigation, route }) {
       return;
     }
     console.log("start?");
+    setIsProcessing(true);
     await editApartment(
       apartment.apartmentId,
       rooms.value,
@@ -141,11 +141,13 @@ export default function EditApartment({ navigation, route }) {
       checked
     )
       .then(() => {
+        setIsProcessing(false);
         setNoteTitle("Note");
         setNoteContent("Process done successfully");
         setNoteVisible(true);
       })
       .catch((error) => {
+        setIsProcessing(false);
         setErrorTitle("Error");
         setErrorContent(error.message);
         setErrorVisible(true);
@@ -187,10 +189,10 @@ export default function EditApartment({ navigation, route }) {
     resetValues();
   }, []);
   const toCloseError = () => {
-    typeof setErrorVisible === "function" ? setErrorVisible(false) : None;
-    typeof setNoteVisible === "function" ? setNoteVisible(false) : None;
-    typeof setWarningVisible === "function" ? setWarningVisible(false) : None;
-    typeof setWarningVisible2 === "function" ? setWarningVisible2(false) : None;
+    typeof setErrorVisible === "function" ? setErrorVisible(false) : null;
+    typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
+    typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
+    typeof setWarningVisible2 === "function" ? setWarningVisible2(false) : null;
   };
   const ListItem = ({ item }) => {
     console.log(item);
@@ -620,12 +622,12 @@ export default function EditApartment({ navigation, route }) {
 
   return (
     <Background>
-      <BackButton goBack={navigation.goBack} />
+      {/* <BackButton goBack={navigation.goBack} /> */}
 
       {/*start your code here*/}
-      <View style={{ height: 50 }}>
+      {/* <View style={{ height: 50 }}>
         <Text style={{ fontSize: 30 }}>Edit page</Text>
-      </View>
+      </View> */}
       {ApartmentEditInfo()}
       <Error
         visible={errorVisible}
@@ -681,6 +683,7 @@ export default function EditApartment({ navigation, route }) {
           setWarningVisible(true);
         }}
       ></Warning>
+      <Processing visible={isProcessing} content={"Loading..."}></Processing>
     </Background>
   );
 }

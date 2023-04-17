@@ -19,50 +19,73 @@ import { getAllListedApartments } from "../config/cloud";
 import Processing from "../components/Processing";
 import TextInput from "../components/TextInput";
 import { theme } from "../core/theme";
+import { numberValidatorAndEmpty } from "../helpers/numberValidatorAndEmpty";
 export default function AvailableApartments({ navigation }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [rooms, setRooms] = useState({ value: "", error: "" });
-  const [bedrooms, setBedrooms] = useState({ value: "", error: "" });
-  const [bathrooms, setBathrooms] = useState({ value: "", error: "" });
-  const [kitchens, setKitchens] = useState({ value: "", error: "" });
-  const [description, setDescription] = useState("");
-  const [name, setName] = useState("");
-  const [fromDate, setFromDate] = useState("01/01/01");
-  const [toDate, setToDate] = useState("01/01/01");
+  const [rooms, setRooms] = useState({ value: "", value2: "", error: "" });
+  const [bedrooms, setBedrooms] = useState({
+    value: "",
+    error: "",
+  });
+  const [bathrooms, setBathrooms] = useState({
+    value: "",
+    error: "",
+  });
+  const [kitchens, setKitchens] = useState({
+    value: "",
+    error: "",
+  });
+  const [roomsTo, setRoomsTo] = useState({ value: "", value2: "", error: "" });
+  const [bedroomsTo, setBedroomsTo] = useState({
+    value: "",
+    error: "",
+  });
+  const [bathroomsTo, setBathroomsTo] = useState({
+    value: "",
+    error: "",
+  });
+  const [kitchensTo, setKitchensTo] = useState({
+    value: "",
+    error: "",
+  });
   const [checked, setChecked] = useState(false);
-
+  const [apartmentsTemp, setApartmentsTemp] = useState([]);
+  const [filtered, setFiltered] = useState(false);
   const [apartments, setApartments] = useState([
-    {
-      balcony: false,
-      denominator: 0,
-      numerator: 0,
-      Listed: false,
-      FromData: { nanoseconds: 0, seconds: 0 },
-      ToDate: { nanoseconds: 0, seconds: 0 },
-      Owner: "",
-      Type: "",
-      Rooms: "",
-      BedRooms: "",
-      Bathrooms: "",
-      Kitchens: "",
-      Name: "",
-      Description: "",
-      Location: [0, 0],
-      Images: [""],
-      Image: "",
-    },
+    // {
+    //   balcony: false,
+    //   denominator: 0,
+    //   numerator: 0,
+    //   Listed: false,
+    //   FromData: { nanoseconds: 0, seconds: 0 },
+    //   ToDate: { nanoseconds: 0, seconds: 0 },
+    //   Owner: "",
+    //   Type: "",
+    //   Rooms: "",
+    //   BedRooms: "",
+    //   Bathrooms: "",
+    //   Kitchens: "",
+    //   Name: "",
+    //   Description: "",
+    //   Location: [0, 0],
+    //   Images: [""],
+    //   Image:
+    //     "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // },
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
   useEffect(() => {
     fetchData();
+    setIsProcessing(false);
   }, []);
 
   async function fetchData() {
     setIsProcessing(true);
     try {
       const res = await getAllListedApartments();
-      console.log("new res = ", res);
+      console.log("new res = ", res, res[0].ToDate);
       setApartments([...res]);
+      setApartmentsTemp([...res]);
       console.log("new apartments = ", apartments);
       console.log("apartmentId = ", apartments[0].apartmentId);
     } catch (error) {
@@ -70,106 +93,290 @@ export default function AvailableApartments({ navigation }) {
     }
     setIsProcessing(false);
   }
+  const apartmentMarker = () => {
+    if (apartments.length > 0) {
+      let finalResult = [];
+
+      apartments.forEach((apartment, index) => {
+        let temp = (
+          <Marker
+            key={index}
+            style={styles.Marker}
+            coordinate={{
+              latitude: apartment.Location[0],
+              longitude: apartment.Location[1],
+            }}
+            title={apartment.Name}
+            description={"Press for more info"}
+            onCalloutPress={() => {
+              navigation.navigate("ApartmentInfo", {
+                paramKey: apartment,
+              });
+            }}
+          >
+            <Image
+              source={{ uri: apartment.Image }}
+              style={{ height: 35, width: 35 }}
+            ></Image>
+          </Marker>
+        );
+        finalResult.push(temp);
+      });
+      return finalResult;
+    }
+  };
+  function clearValues() {
+    setRooms({
+      value: "",
+      error: "",
+    });
+    setRoomsTo({
+      value: "",
+      error: "",
+    });
+    setKitchens({
+      value: "",
+      error: "",
+    });
+    setKitchensTo({
+      value: "",
+      error: "",
+    });
+    setBathrooms({
+      value: "",
+      error: "",
+    });
+    setBathroomsTo({
+      value: "",
+      error: "",
+    });
+    setBedrooms({
+      value: "",
+      error: "",
+    });
+    setBedroomsTo({
+      value: "",
+      error: "",
+    });
+  }
+  function isBetween(str1, strbetween, str2) {
+    let between = parseInt(strbetween);
+    if (str1 === "" && str2 === "") return true;
+    if (str1 === "" && str2 !== "") return between <= parseInt(str2);
+    if (str1 !== "" && str2 === "") return between >= parseInt(str1);
+    else return parseInt(str1) <= between && between <= parseInt(str2);
+  }
+  function filterArray(value) {
+    if (!isBetween(rooms.value, value.Rooms, roomsTo.value)) return false;
+    if (!isBetween(bathrooms.value, value.Bathrooms, bathroomsTo.value))
+      return false;
+    if (!isBetween(bedrooms.value, value.Bedrooms, bedroomsTo.value))
+      return false;
+    if (!isBetween(kitchens.value, value.Kitchens, kitchensTo.value))
+      return false;
+    if (value.Belcony != checked) return false;
+    return true;
+  }
+  const handleFiltering = () => {
+    const roomsError = numberValidatorAndEmpty(rooms.value);
+    const roomsToError = numberValidatorAndEmpty(roomsTo.value);
+    const bedroomsError = numberValidatorAndEmpty(bedrooms.value);
+    const bedroomsToError = numberValidatorAndEmpty(bedroomsTo.value);
+    const bathroomsError = numberValidatorAndEmpty(bathrooms.value);
+    const bathroomsToError = numberValidatorAndEmpty(bathroomsTo.value);
+    const kitchensError = numberValidatorAndEmpty(kitchens.value);
+    const kitchensToError = numberValidatorAndEmpty(kitchensTo.value);
+    if (
+      roomsError ||
+      bedroomsError ||
+      bathroomsError ||
+      kitchensToError ||
+      roomsToError ||
+      bedroomsToError ||
+      bathroomsToError ||
+      kitchensToError
+    ) {
+      setRooms({ ...rooms, error: roomsError });
+      setBedrooms({ ...bedrooms, error: bedroomsError });
+      setBathrooms({ ...bathrooms, error: bathroomsError });
+      setKitchens({ ...kitchens, error: kitchensError });
+      setRoomsTo({ ...roomsTo, error: roomsToError });
+      setBedroomsTo({ ...bedroomsTo, error: bedroomsToError });
+      setBathroomsTo({ ...bathroomsTo, error: bathroomsToError });
+      setKitchensTo({ ...kitchensTo, error: kitchensToError });
+      return;
+    }
+    const roomsToError2 = isBetween(rooms.value, roomsTo.value, "")
+      ? ""
+      : "Need greater value";
+    const bedroomsToError2 = isBetween(bedrooms.value, bedroomsTo.value, "")
+      ? ""
+      : "Need greater value";
+    const bathroomsToError2 = isBetween(bathrooms.value, bathroomsTo.value, "")
+      ? ""
+      : "Need greater value";
+    const kitchensToError2 = isBetween(kitchens.value, kitchensTo.value, "")
+      ? ""
+      : "Need greater value";
+    if (
+      roomsToError2 ||
+      bedroomsToError2 ||
+      bathroomsToError2 ||
+      kitchensToError2
+    ) {
+      setRoomsTo({ ...roomsTo, error: roomsToError2 });
+      setBedroomsTo({ ...bedroomsTo, error: bedroomsToError2 });
+      setBathroomsTo({ ...bathroomsTo, error: bathroomsToError2 });
+      setKitchensTo({ ...kitchensTo, error: kitchensToError2 });
+      return;
+    }
+    setApartments([...apartmentsTemp].filter(filterArray));
+    setFiltered(true);
+    setIsModalVisible(false);
+    // setIndx
+  };
   const write = () => {
     return (
-      <View style={styles.write2}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <TextInput
-              label="Rooms"
-              returnKeyType="next"
-              value={rooms.value}
-              onChangeText={(text) => setRooms({ value: text, error: "" })}
-              error={!!rooms.error}
-              errorText={rooms.error}
-              autoCapitalize="none"
-              keyboardType="numeric"
-              // defaultValue={apartments[index].Rooms}
-            />
+      <View style={{ width: "100%" }}>
+        <View>
+          <Text style={styles.filterBoxTitle}>Rooms</Text>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="From"
+                returnKeyType="next"
+                value={rooms.value}
+                onChangeText={(text) => setRooms({ value: text, error: "" })}
+                error={!!rooms.error}
+                errorText={rooms.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="To"
+                returnKeyType="next"
+                value={roomsTo.value}
+                onChangeText={(text) => setRoomsTo({ value: text, error: "" })}
+                error={!!roomsTo.error}
+                errorText={roomsTo.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <TextInput
-              label="Bedrooms"
-              returnKeyType="next"
-              value={bedrooms.value}
-              onChangeText={(text) => setBedrooms({ value: text, error: "" })}
-              error={!!bedrooms.error}
-              errorText={bedrooms.error}
-              autoCapitalize="none"
-              keyboardType="numeric"
-            />
+        </View>
+        <View>
+          <Text style={styles.filterBoxTitle}>Bedrooms</Text>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="From"
+                returnKeyType="next"
+                value={bedrooms.value}
+                onChangeText={(text) => setBedrooms({ value: text, error: "" })}
+                error={!!bedrooms.error}
+                errorText={bedrooms.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="To"
+                returnKeyType="next"
+                value={bedroomsTo.value}
+                onChangeText={(text) =>
+                  setBedroomsTo({ value: text, error: "" })
+                }
+                error={!!bedroomsTo.error}
+                errorText={bedroomsTo.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
+        <View>
+          <Text style={styles.filterBoxTitle}>Bathrooms</Text>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="From"
+                returnKeyType="next"
+                value={bathrooms.value}
+                onChangeText={(text) =>
+                  setBathrooms({
+                    value: text,
+                    error: "",
+                  })
+                }
+                error={!!bathrooms.error}
+                errorText={bathrooms.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="To"
+                returnKeyType="next"
+                value={bathroomsTo.value}
+                onChangeText={(text) =>
+                  setBathroomsTo({
+                    value: text,
+                    error: "",
+                  })
+                }
+                error={!!bathroomsTo.error}
+                errorText={bathroomsTo.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
+        <View>
+          <Text style={styles.filterBoxTitle}>kitchens</Text>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="From"
+                returnKeyType="next"
+                value={kitchens.value}
+                onChangeText={(text) => setKitchens({ value: text, error: "" })}
+                error={!!kitchens.error}
+                errorText={kitchens.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                label="To"
+                returnKeyType="next"
+                value={kitchensTo.value2}
+                onChangeText={(text) =>
+                  setKitchensTo({ value: text, error: "" })
+                }
+                error={!!kitchensTo.error}
+                errorText={kitchensTo.error}
+                autoCapitalize="none"
+                keyboardType="numeric"
+              />
+            </View>
           </View>
         </View>
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-around",
+            justifyContent: "space-between",
           }}
         >
-          <View style={{ flex: 1 }}>
-            <TextInput
-              label="Bathrooms"
-              returnKeyType="next"
-              value={bathrooms.value}
-              onChangeText={(text) => setBathrooms({ value: text, error: "" })}
-              error={!!bathrooms.error}
-              errorText={bathrooms.error}
-              autoCapitalize="none"
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TextInput
-              label="kitchens"
-              returnKeyType="next"
-              value={kitchens.value}
-              onChangeText={(text) => setKitchens({ value: text, error: "" })}
-              error={!!kitchens.error}
-              errorText={kitchens.error}
-              autoCapitalize="none"
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-
-        {/* <Text style={{ fontSize: 15, margin: 5 }}>Name</Text>
-        <ReactTextInput
-          multiline={true}
-          style={{
-            borderWidth: 1,
-            borderRadius: 3,
-            margin: 3,
-            backgroundColor: theme.colors.surface,
-            minHeight: 50,
-            paddingLeft: 5,
-          }}
-          placeholder="(Optional)"
-          value={name}
-          onChangeText={(text) => setName(text)}
-        ></ReactTextInput>
-        <Text style={{ fontSize: 15, margin: 5 }}>Description</Text>
-        <ReactTextInput
-          multiline={true}
-          style={{
-            borderWidth: 1,
-            borderRadius: 3,
-            margin: 3,
-            backgroundColor: theme.colors.surface,
-            minHeight: 50,
-            paddingLeft: 5,
-          }}
-          placeholder="(Optional)"
-          value={description}
-          onChangeText={(text) => setDescription(text)}
-        ></ReactTextInput> */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Text style={{ textAlignVertical: "center" }}>Has a belcony?</Text>
+          <Text style={styles.filterBoxTitle}>Belcony?</Text>
           <Checkbox
+            style={{ alignSelf: "center" }}
             status={checked ? "checked" : "unchecked"}
             onPress={() => {
               setChecked(!checked);
@@ -181,50 +388,83 @@ export default function AvailableApartments({ navigation }) {
   };
   const filterWindow = () => {
     return (
-      <Modal visible={isModalVisible}>
-        <View style={{ justifyContent: "space-between", height: "100%" }}>
+      <Modal animationType="slide" transparent={true} visible={isModalVisible}>
+        <View style={styles.modalView}>
           {write()}
-          <View
-            style={{
-              flexDirection: "row",
-              flex: 1,
-              position: "absolute",
-              bottom: 20,
-            }}
-          >
-            <TouchableOpacity
-              style={[
-                styles.CloseModal,
-                { backgroundColor: theme.colors.primary },
-              ]}
-              onPress={() => setIsModalVisible(false)}
-            >
-              <Text
+          <View>
+            {filtered && (
+              <TouchableOpacity
                 style={{
                   alignSelf: "center",
-                  fontSize: 20,
-                  fontWeight: "bold",
-                  color: "white",
+                  backgroundColor: "#fd0000",
+                  width: "90%",
+                  height: 40,
+                  justifyContent: "center",
+                }}
+                onPress={() => {
+                  setApartments(apartmentsTemp);
+                  clearValues();
+                  setFiltered(false);
+                  setIsModalVisible(false);
                 }}
               >
-                Apply filter
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.CloseModal}
-              onPress={() => setIsModalVisible(false)}
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Cancel Filter
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <View
+              style={{
+                flexDirection: "row",
+                // flex: 1,
+                // // position: "absolute",
+                // bottom: 20,
+              }}
             >
-              <Text
-                style={{
-                  alignSelf: "center",
-                  fontSize: 20,
-                  fontWeight: "bold",
-                  color: "white",
+              <TouchableOpacity
+                style={[
+                  styles.CloseModal,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+                onPress={() => {
+                  handleFiltering();
                 }}
               >
-                Close
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Apply filter
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.CloseModal}
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -232,30 +472,33 @@ export default function AvailableApartments({ navigation }) {
   };
   return (
     <Background>
-      <BackButton goBack={navigation.goBack} />
+      {/* <BackButton goBack={navigation.goBack} /> */}
       {/*start your code here*/}
       {/* <Text>its AvailableApartments page start your code here</Text> */}
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={styles.ScrollView1}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      <TouchableOpacity
+        onPress={() => setIsModalVisible(true)}
+        style={{
+          width: "100%",
+          height: 30,
+          marginTop: 20,
+          flexDirection: "row",
+        }}
       >
-        <TouchableOpacity
-          onPress={() => setIsModalVisible(true)}
-          style={{
-            width: "100%",
-            height: 30,
-            marginTop: 50,
-            flexDirection: "row",
-          }}
-        >
-          <Text style={{ flex: 3 }}>Filter</Text>
-          <Image
-            source={require("../assets/filter.png")}
-            style={{ height: 30, width: 30 }}
-          ></Image>
-        </TouchableOpacity>
+        <Text style={{ flex: 3 }}>Filter</Text>
+        <Image
+          source={require("../assets/filter.png")}
+          style={{ height: 30, width: 30 }}
+        ></Image>
+      </TouchableOpacity>
+
+      <View
+        style={{
+          width: "100%",
+          height: "100%",
+          paddingBottom: 5,
+        }}
+      >
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
@@ -266,69 +509,32 @@ export default function AvailableApartments({ navigation }) {
             longitudeDelta: 0.3,
           }}
         >
-          <Marker
-            style={styles.Marker}
-            coordinate={{ latitude: 31.769218, longitude: 35.164061 }}
-            title={"title"}
-            description={"description"}
-          >
-            <Image
-              source={require("..//assets/house1.jpg")}
-              style={{ height: 35, width: 35 }}
-            ></Image>
-          </Marker>
-          <Marker
-            style={styles.Marker}
-            coordinate={{ latitude: 31.762218, longitude: 35.169061 }}
-            title={"title"}
-            description={"description"}
-          >
-            <Image
-              source={require("..//assets/house2.jpg")}
-              style={{ height: 35, width: 35 }}
-            ></Image>
-          </Marker>
-          <Marker
-            style={styles.Marker}
-            coordinate={{ latitude: 31.762218, longitude: 35.166061 }}
-            title={"title"}
-            description={"description"}
-          >
-            <Image
-              source={require("..//assets/house3.jpg")}
-              style={{ height: 35, width: 35 }}
-            ></Image>
-          </Marker>
-          <Marker
-            style={styles.Marker}
-            coordinate={{ latitude: 31.768218, longitude: 35.174061 }}
-            title={"title"}
-            description={"description"}
-          >
-            <Image
-              source={require("..//assets/house4.jpg")}
-              style={{ height: 35, width: 35 }}
-            ></Image>
-          </Marker>
-          <Marker
-            style={styles.Marker}
-            coordinate={{ latitude: 31.763218, longitude: 35.163061 }}
-            title={"title"}
-            description={"description"}
-          >
-            <Image
-              source={require("..//assets/house5.jpg")}
-              style={{ height: 35, width: 35 }}
-            ></Image>
-          </Marker>
+          {apartmentMarker()}
         </MapView>
-      </ScrollView>
+      </View>
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
       {filterWindow()}
     </Background>
   );
 }
 const styles = StyleSheet.create({
+  filterBoxTitle: {
+    textAlign: "center",
+    textAlignVertical: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  modalView: {
+    margin: 20,
+    justifyContent: "space-between",
+    // alignItems: "center",
+    // height: "100%",
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    shadowColor: "#000",
+    elevation: 10,
+  },
   CloseModal: {
     // display: "flex",
     margin: 5,
@@ -346,7 +552,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   map: {
-    borderWidth: 4,
+    // borderWidth: 4,
     // marginTop: 20,
     width: "100%",
     height: "100%",

@@ -2,14 +2,14 @@ import React from "react";
 import { ImageBackground, StyleSheet, View } from "react-native";
 import { theme } from "../core/theme";
 
-export default function Background({ children }) {
+export default function Background({ children, innerStyle }) {
   return (
     <ImageBackground
       source={require("../assets/background_dot.png")}
       resizeMode="repeat"
-      style={styles.background}
+      style={[styles.background]}
     >
-      <View style={styles.container} behavior="padding">
+      <View style={[styles.container, { ...innerStyle }]} behavior="padding">
         {children}
       </View>
     </ImageBackground>
@@ -24,12 +24,12 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
     width: "100%",
     // maxWidth: 340,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 7,
+    // borderWidth: 7,
   },
 });

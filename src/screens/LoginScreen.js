@@ -28,16 +28,15 @@ export default function LoginScreen({ navigation }) {
       setEmail({ ...email, error: emailError });
       setPassword({ ...password, error: passwordError });
       return;
-    } else {
-      logIn(email.value, password.value)
-        .then((res) => {
-          if (res === true) navigation.replace("HomeScreen");
-        })
-        .catch((error) => {
-          setAlertContent(error.message);
-          setIsAlertVisible(true);
-        });
     }
+    logIn(email.value, password.value)
+      .then(() => {
+        navigation.replace("HomeScreen");
+      })
+      .catch((error) => {
+        setAlertContent(error.message);
+        setIsAlertVisible(true);
+      });
     // navigation.navigate("HomeScreen");
   };
 

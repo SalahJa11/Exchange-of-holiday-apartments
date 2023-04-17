@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Background from "../components/Background";
 import Logo from "../components/Logo";
 import * as ImagePicker from "expo-image-picker";
@@ -15,28 +15,32 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
-import TextInput from "../components/TextInput";
-import { nameValidator } from "../helpers/nameValidator";
-import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
-import { idValidator } from "../helpers/idValidator";
-// import OurActivityIndicator from "../components/OurActivityIndicator";
 import * as paper from "react-native-paper";
 import Button from "../components/Button";
 import { theme } from "../core/theme";
 import {
   signOutUser,
   getProfileIcon,
-  uploadImageToDatabase,
-  uploadProfileImageToDatabase,
-  updateUserProfile,
   getUserData,
+  serverTime,
 } from "../config/cloud";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen({ navigation, route }) {
   const wait = (timeout) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
   };
-  const [profile, setProfile] = useState(route.params?.paramKey);
+  const [profile, setProfile] = useState({
+    apartments: [],
+    denominator: 0,
+    email: "example@example.example",
+    image: "",
+    isActive: false,
+    name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    numerator: 0,
+    personalID: "",
+    phoneNumber: "",
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingText, setProcessingText] = useState("Processing...");
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,140 +49,73 @@ export default function HomeScreen({ navigation, route }) {
   const [isAleretVisible, setIsAlertVisible] = useState(false);
   const [isNote, setIsNote] = useState(false);
   let noteColor = "green";
-  const [userData, setUserData] = useState(true);
-  const [editUserData, seteditUserData] = useState(false);
-
-  const [name, setName] = useState({ value: profile.name, error: "" });
-  // const [password, setPassword] = useState({ value: "", error: "" });
-  const [phoneNumber, setPhoneNumber] = useState({
-    value: profile.phoneNumber,
-    error: "",
-  });
-  const [id, setId] = useState({ value: profile.personalID, error: "" });
-  const [image, setImage] = useState(profile.image);
-  const [imageAssets, setImageAssets] = useState({});
-  const profileIcon = getProfileIcon();
-  // console.log("paramkey inside homescreen ", profile);
-
+  const [image, setImage] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  async function handleRefresh() {
-    wait()
-      .then(() => {
-        getUserData()
-          .then((profile) => {
-            if (profile == "") {
-              console.log("sign out function required !");
-            } else {
-              setProfile(profile);
-              setId({ value: profile.personalID, error: "" });
-              setName({ value: profile.name, error: "" });
-              setPhoneNumber({
-                value: profile.phoneNumber,
-                error: "",
-              });
-              setImage(profile.image);
-            }
-          })
-          .catch((error) => {
-            setAlertTitle("Error");
-            setAlertContent(error.message);
-            setIsAlertVisible(true);
-          });
+  useEffect(() => {
+    fetchData();
+  }, []);
+  const fetchData = async () => {
+    await getUserData()
+      .then((profile) => {
+        setProfile(profile);
+        setImage(profile.image);
       })
       .catch((error) => {
         setAlertTitle("Error");
         setAlertContent(error.message);
         setIsAlertVisible(true);
       });
+  };
+  async function handleRefresh() {
+    wait().then(async () => {
+      await fetchData();
+    });
   }
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     wait().then(() => {
-      handleRefresh().then(() => {
+      handleRefresh().then(async () => {
+        let x = await serverTime().catch((e) => {
+          console.error(e.message);
+        });
+        console.log("new date = ", new Date().getDate(), Date());
         setIsLoading(false);
         setRefreshing(false);
       });
     }, []);
   });
-  const handleUpdate = async () => {
-    const nameError = nameValidator(name.value);
-    // const passwordError = passwordValidator(password.value);
-    const phoneNumberError = phoneNumberValidator(phoneNumber.value);
-    const idError = idValidator(id.value);
 
-    if (nameError || phoneNumberError || idError) {
-      setName({ ...name, error: nameError });
-      setPhoneNumber({ ...phoneNumber, error: phoneNumberError });
-      setId({ ...id, error: idError });
-      return;
-    }
-    setProcessingText("Updating...");
-    setIsProcessing(true);
-    await updateUserProfile({
-      name: name.value,
-      personalID: id.value,
-      phoneNumber: phoneNumber.value,
-      imageAssets: imageAssets,
-    })
-      .then(() => {
-        setIsProcessing(false);
-        setIsNote(true);
-        setAlertTitle("Note");
-        setAlertContent("Account has been updated");
-        setIsAlertVisible(true);
-      })
-      .catch((error) => {
-        setIsProcessing(false);
-        // console.log(error);
-        setAlertTitle("Error");
-        setAlertContent(error.message);
-        setIsAlertVisible(true);
-      });
-    setModalVisible(false);
-    seteditUserData(false);
-    setUserData(true);
-    // uploadImageToDatabase(imageAssets);
-  };
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      setImageAssets(result.assets[0]);
-    } else {
-      setImageAssets({});
-    }
-  };
   return (
     <Background>
-      {/* hidden screen when you click in profile icon */}
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      <SafeAreaView
         style={{
           height: "100%",
           width: "100%",
         }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
       >
-        <Modal
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => {
-            setModalVisible(!modalVisible);
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+          style={{
+            height: "100%",
+            width: "100%",
           }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
-          <ScrollView
-            style={styles.ScrollView1}
-            contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+          <Modal
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => {
+              setModalVisible(!modalVisible);
+            }}
           >
-            <View style={styles.HeddinScreeen}>
-              {userData && (
+            <ScrollView
+              style={styles.ScrollView1}
+              contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+            >
+              <View style={styles.HeddinScreeen}>
                 <Pressable
                   onPress={() => setModalVisible(!modalVisible)}
                   style={styles.ProfileScreen}
@@ -208,10 +145,7 @@ export default function HomeScreen({ navigation, route }) {
                       Phone number: {profile.phoneNumber}
                     </Text>
                     <Text style={styles.ProfileDetails}>
-                      Rating:{" "}
-                      {profile.denominator == 0
-                        ? "0"
-                        : profile.numerator / profile.denominator}
+                      Rating:{profile.Rating}
                     </Text>
                   </View>
                   <View style={styles.profilePressableButtonsView}>
@@ -248,8 +182,10 @@ export default function HomeScreen({ navigation, route }) {
                         styles.profilePressableButtons2,
                       ]}
                       onPress={() => {
-                        setUserData(false);
-                        seteditUserData(true);
+                        setModalVisible(false);
+                        navigation.navigate("ProfileUpdate", {
+                          paramKey: profile,
+                        });
                       }}
                     >
                       <Text
@@ -265,269 +201,132 @@ export default function HomeScreen({ navigation, route }) {
                     </TouchableOpacity>
                   </View>
                 </Pressable>
-              )}
-              {editUserData && (
-                <View
-                  onPress={() => setModalVisible(!modalVisible)}
-                  style={styles.ProfileScreen}
-                >
-                  <View style={styles.header}>
-                    <View style={styles.headerContent}>
-                      <TouchableOpacity onPress={() => pickImage()}>
-                        <Image
-                          style={styles.avatar}
-                          source={
-                            image == ""
-                              ? require("../assets/profile.png")
-                              : { uri: image }
-                          }
-                        />
-                      </TouchableOpacity>
-
-                      <Text
-                        style={[
-                          styles.modalText,
-                          { color: "white", fontSize: 15 },
-                        ]}
-                      >
-                        Click on image to update it
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.DetailsContainer}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                      }}
-                    >
-                      {/* <Text style={styles.modalText}>Id: </Text> */}
-                      <TextInput
-                        style={styles.modalTextInput}
-                        defaultValue={profile.personalID}
-                        label="ID"
-                        returnKeyType="next"
-                        value={id.value}
-                        onChangeText={(text) =>
-                          setId({ value: text, error: "" })
-                        }
-                        error={!!id.error}
-                        errorText={id.error}
-                        keyboardType="numeric"
-                      ></TextInput>
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                      }}
-                    >
-                      {/* <Text style={styles.modalText}>Name: </Text> */}
-                      <TextInput
-                        style={styles.modalTextInput}
-                        defaultValue={profile.name}
-                        label="Name"
-                        returnKeyType="next"
-                        value={name.value}
-                        onChangeText={(text) =>
-                          setName({ value: text, error: "" })
-                        }
-                        error={!!name.error}
-                        errorText={name.error}
-                      ></TextInput>
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                      }}
-                    >
-                      {/* <Text style={styles.modalText}>Phone number: </Text> */}
-                      <TextInput
-                        style={styles.modalTextInput}
-                        defaultValue={profile.phoneNumber}
-                        label="Phone Number"
-                        returnKeyType="done"
-                        value={phoneNumber.value}
-                        onChangeText={(text) =>
-                          setPhoneNumber({ value: text, error: "" })
-                        }
-                        error={!!phoneNumber.error}
-                        errorText={phoneNumber.error}
-                        keyboardType="phone-pad"
-                      ></TextInput>
-                    </View>
-                  </View>
-                  <View style={styles.profilePressableButtonsView}>
-                    <TouchableOpacity
-                      style={styles.profilePressableButtons}
-                      onPress={() => {
-                        // wait().then(() => {
-                        //   setModalVisible(false);
-                        //   setIsProcessing(true);
-                        //   signOutUser()
-                        //     .then(() => {
-                        //       navigation.replace("StartScreen");
-                        //     })
-                        //     .catch((error) => alert(error.message));
-                        // });
-                        seteditUserData(false);
-                        setUserData(true);
-                      }}
-                    >
-                      <Text
-                        style={{
-                          alignSelf: "center",
-                          fontSize: 20,
-                          fontWeight: "bold",
-                          color: "white",
-                        }}
-                      >
-                        Cancel
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.profilePressableButtons,
-                        styles.profilePressableButtons2,
-                      ]}
-                      onPress={() => {
-                        handleUpdate();
-                      }}
-                    >
-                      <Text
-                        style={{
-                          alignSelf: "center",
-                          fontSize: 20,
-                          fontWeight: "bold",
-                          color: "white",
-                        }}
-                      >
-                        Done
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </View>
-          </ScrollView>
-        </Modal>
-        <TouchableOpacity
-          style={styles.profileIconContainer}
-          onPress={() => {
-            setModalVisible(true);
-            console.log("pressed");
-          }}
-        >
-          <Image
-            source={
-              image == "" ? require("../assets/profile.png") : { uri: image }
-            }
-            style={styles.profileIcon}
-          />
-        </TouchableOpacity>
-        <View style={styles.buttonContainer}>
-          {/* <SafeAreaView style={styles.LogoTextContainer}>
+              </View>
+            </ScrollView>
+          </Modal>
+          <TouchableOpacity
+            style={styles.profileIconContainer}
+            onPress={() => {
+              setModalVisible(true);
+              console.log("pressed");
+            }}
+          >
+            <Image
+              source={
+                image == "" ? require("../assets/profile.png") : { uri: image }
+              }
+              style={styles.profileIcon}
+            />
+          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            {/* <SafeAreaView style={styles.LogoTextContainer}>
           <Logo />
           </SafeAreaView> */}
-          {/* all the button  */}
-          <Logo />
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate("AvailableApartments")}
-          >
-            Show Available Apartments
-          </Button>
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate("MyBookings")}
-          >
-            Show My Bookings
-          </Button>
-          <Button
-            mode="contained"
-            onPress={() =>
-              navigation.navigate("AddMyApartment", {
-                paramKey: profile,
-              })
-            }
-          >
-            Add My Apartment
-          </Button>
-          <Button mode="contained" onPress={() => navigation.navigate("Chat")}>
-            Open Chat
-          </Button>
-        </View>
-        <paper.Modal visible={isProcessing}>
-          <View style={styles.processingAlertContainer}>
-            <View style={styles.processingAlertContentContainer}>
-              <Text style={styles.processingAlertTextStyle}>
-                {processingText}
-              </Text>
-              <ActivityIndicator size="large" color={theme.colors.primary} />
-            </View>
+            {/* all the button  */}
+            <Logo />
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate("AvailableApartments")}
+            >
+              Show Available Apartments
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate("MyBookings")}
+            >
+              Show My Bookings
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() =>
+                navigation.navigate("AddMyApartment", {
+                  paramKey: profile,
+                })
+              }
+            >
+              Add My Apartment
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate("Chat")}
+            >
+              Open Chat
+            </Button>
           </View>
-        </paper.Modal>
-        <paper.Modal visible={isAleretVisible}>
-          <View
-            style={[
-              styles.alertContainer,
-              isNote ? { color: noteColor } : { color: "#ff3333" },
-            ]}
-          >
+          <paper.Modal visible={isProcessing}>
+            <View style={styles.processingAlertContainer}>
+              <View style={styles.processingAlertContentContainer}>
+                <Text style={styles.processingAlertTextStyle}>
+                  {processingText}
+                </Text>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+              </View>
+            </View>
+          </paper.Modal>
+          <paper.Modal visible={isAleretVisible}>
             <View
               style={[
-                styles.alertContentContainer,
-                isNote
-                  ? { borderColor: noteColor }
-                  : { borderColor: "#ff3333" },
+                styles.alertContainer,
+                isNote ? { color: noteColor } : { color: "#ff3333" },
               ]}
             >
-              <Text
+              <View
                 style={[
-                  styles.alertTitleTextStyle,
-                  isNote ? { color: noteColor } : { color: "#ff3333" },
+                  styles.alertContentContainer,
+                  isNote
+                    ? { borderColor: noteColor }
+                    : { borderColor: "#ff3333" },
                 ]}
-              >
-                {alertTitle}
-              </Text>
-
-              <Text
-                style={[
-                  styles.alertContentText,
-                  isNote ? { color: noteColor } : { color: "#ff3333" },
-                ]}
-              >
-                {alertContent}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.alertCloseButtonStyle,
-                  isNote ? { borderColor: noteColor } : { color: "#ff3333" },
-                ]}
-                onPress={() => {
-                  setIsAlertVisible(false);
-                  wait(1)
-                    .then(() => {
-                      setIsNote(false);
-                      handleRefresh();
-                    })
-                    .catch(() => {
-                      setIsNote(false);
-                      handleRefresh();
-                    });
-                }}
               >
                 <Text
                   style={[
-                    styles.alertButtonTextStyle,
-                    isNote ? { color: noteColor } : "#ff3333",
+                    styles.alertTitleTextStyle,
+                    isNote ? { color: noteColor } : { color: "#ff3333" },
                   ]}
                 >
-                  Close
+                  {alertTitle}
                 </Text>
-              </TouchableOpacity>
+
+                <Text
+                  style={[
+                    styles.alertContentText,
+                    isNote ? { color: noteColor } : { color: "#ff3333" },
+                  ]}
+                >
+                  {alertContent}
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.alertCloseButtonStyle,
+                    isNote ? { borderColor: noteColor } : { color: "#ff3333" },
+                  ]}
+                  onPress={() => {
+                    setIsAlertVisible(false);
+                    wait(1)
+                      .then(() => {
+                        setIsNote(false);
+                        handleRefresh();
+                      })
+                      .catch(() => {
+                        setIsNote(false);
+                        handleRefresh();
+                      });
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.alertButtonTextStyle,
+                      isNote ? { color: noteColor } : "#ff3333",
+                    ]}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </paper.Modal>
-      </ScrollView>
+          </paper.Modal>
+        </ScrollView>
+      </SafeAreaView>
     </Background>
   );
 }

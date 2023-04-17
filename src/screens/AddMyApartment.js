@@ -19,6 +19,7 @@ import { theme } from "../core/theme";
 import Error from "../components/Error";
 import Warning from "../components/Warning";
 import Note from "../components/Note";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import Processing from "../components/Processing";
 import {
@@ -28,26 +29,30 @@ import {
 } from "../config/cloud";
 
 export default function AddMyApartment({ navigation }) {
+  // const navigation = useNavigation();
+  const isFocused = useIsFocused();
+
   const [apartments, setApartments] = useState([
-    {
-      balcony: false,
-      denominator: 0,
-      numerator: 0,
-      Listed: false,
-      FromData: { nanoseconds: 0, seconds: 0 },
-      ToDate: { nanoseconds: 0, seconds: 0 },
-      Owner: "",
-      Type: "",
-      Rooms: "",
-      BedRooms: "",
-      Bathrooms: "",
-      Kitchens: "",
-      Name: "",
-      Description: "",
-      Location: [0, 0],
-      Images: [""],
-      Image: "",
-    },
+    // {
+    //   balcony: false,
+    //   denominator: 0,
+    //   numerator: 0,
+    //   Listed: false,
+    //   FromData: { nanoseconds: 0, seconds: 0 },
+    //   ToDate: { nanoseconds: 0, seconds: 0 },
+    //   Owner: "",
+    //   Type: "",
+    //   Rooms: "",
+    //   BedRooms: "",
+    //   Bathrooms: "",
+    //   Kitchens: "",
+    //   Name: "",
+    //   Description: "",
+    //   Location: [0, 0],
+    //   Images: [],
+    //   Image:
+    //     "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // },
   ]);
   async function fetchData() {
     setIsProcessing(true);
@@ -59,13 +64,17 @@ export default function AddMyApartment({ navigation }) {
       // console.log("apartmentId = ", apartments[0].apartmentId);
     } catch (error) {
       setIsProcessing(false);
+      setModalVisible(false);
+      setErrorTitle("Error");
+      setErrorContent(error.message);
+      setErrorVisible(true);
     }
     setIsProcessing(false);
   }
   const [isProcessing, setIsProcessing] = useState(false);
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isFocused) fetchData();
+  }, [isFocused]);
 
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -154,8 +163,11 @@ export default function AddMyApartment({ navigation }) {
         setNoteVisible(true);
       })
       .catch((error) => {
-        console.log(error);
         setIsProcessing(false);
+        setModalVisible(false);
+        setErrorTitle("Error");
+        setErrorContent(error.message);
+        setErrorVisible(true);
       });
     setIsProcessing(false);
     fetchData();
@@ -192,8 +204,11 @@ export default function AddMyApartment({ navigation }) {
         setNoteVisible(true);
       })
       .catch((error) => {
-        console.log(error);
         setIsProcessing(false);
+        setModalVisible(false);
+        setErrorTitle("Error");
+        setErrorContent(error.message);
+        setErrorVisible(true);
       });
     setIsProcessing(false);
     fetchData();
@@ -489,7 +504,12 @@ export default function AddMyApartment({ navigation }) {
                   ? "0"
                   : element.numerator / element.denominator}
                 {"\n"}
-                {element.Listed ? "Listed" : "Not listed"}
+                {new Date(googleDateToJavaDate(element.ToDate)).getTime() <
+                new Date().setHours(0, 0, 0, 0)
+                  ? "Expired"
+                  : element.Listed
+                  ? "Listed"
+                  : "Not listed"}
               </Text>
             </View>
           )}
@@ -500,7 +520,7 @@ export default function AddMyApartment({ navigation }) {
   };
   return (
     <Background style={{ marginTop: 15 }}>
-      <BackButton goBack={navigation.goBack} />
+      {/* <BackButton goBack={navigation.goBack} /> */}
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
@@ -509,7 +529,7 @@ export default function AddMyApartment({ navigation }) {
               showsVerticalScrollIndicator={false}
               style={styles.ScrollView1}
             >
-              {ApartmentInfo()}
+              {apartments.length > 0 ? ApartmentInfo() : null}
             </ScrollView>
           </View>
         </View>
@@ -538,42 +558,6 @@ export default function AddMyApartment({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* <TouchableOpacity
-          style={{ marginTop: 50, borderWidth: 2 }}
-          onPress={() => {
-            setErrorTitle("Temp");
-            setErrorVisible(true);
-          }}
-        >
-          <Text>Error</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{ marginTop: 50, borderWidth: 2 }}
-          onPress={() => {
-            setErrorTitle("hehe 2 22");
-            setErrorVisible(true);
-          }}
-        >
-          <Text>Error2</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{ marginTop: 50, borderWidth: 2 }}
-          onPress={() => {
-            setWarningTitle("hellow hehe");
-            setWarningVisible(true);
-          }}
-        >
-          <Text>warning</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{ marginTop: 50, borderWidth: 2 }}
-          onPress={() => {
-            setNoteTitle("note hehe");
-            setNoteVisible(true);
-          }}
-        >
-          <Text>note</Text>
-        </TouchableOpacity> */}
         <View style={styles.View2}>{everyHouseCard()}</View>
       </ScrollView>
 

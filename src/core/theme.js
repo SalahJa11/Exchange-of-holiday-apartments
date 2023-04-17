@@ -12,5 +12,15 @@ export const theme = {
     error: "#E14D2A",
     warning: "#f76300",
     note: "green",
+    cancelled: "#d9534f",
+    cancelled2: "#cd9c9a",
+    confirmed: "#5cb85c",
+    confirmed2: "#97af97",
+    pending: "#5bc0de",
+    pending2: "#a3b2b7",
+    expired: "#6200ee",
+    expired2: "#c2b6d3",
+
+    // cancelled:"#6200ee",
   },
 };

@@ -81,7 +81,7 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <Background>
-      <BackButton goBack={navigation.goBack} />
+      {/* <BackButton goBack={navigation.goBack} /> */}
       <ScrollView
         style={styles.ScrollView1}
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}

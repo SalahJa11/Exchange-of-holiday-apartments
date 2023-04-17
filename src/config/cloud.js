@@ -1,17 +1,10 @@
-import { db, auth, storage } from "./firebase";
+import { db, auth, storage, firestore } from "./firebase";
 import {
   ref,
   uploadBytesResumable,
   getDownloadURL,
   uploadBytes,
 } from "firebase/storage";
-// import { auth } from "firebase/auth";
-import { useState } from "react";
-import { async } from "@firebase/util";
-// import "firebase/firestore";
-// import { ref, getDownloadURL, uploadBytesResumable, uploadBytes, getStorage, deleteObject } from "firebase/storage";
-// import { Alert } from "react-native";
-// import { manipulateAsync, FlipType, SaveFormat } from 'expo-image-manipulator';
 import {
   collection,
   setDoc,
@@ -28,6 +21,7 @@ import {
   Timestamp,
   arrayUnion,
   arrayRemove,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   signInWithEmailAndPassword,
@@ -35,16 +29,9 @@ import {
   sendEmailVerification,
   signOut,
   updateCurrentUser,
+  getAuth,
+  sendPasswordResetEmail,
 } from "firebase/auth";
-// import * as firebase from "firebase";
-/**
- *
- * @param {*} userName
- * @param {*} userEmail
- * @param {*} userPhoneNumber
- * @param {*} userDateCreated
- * @param {*} userIdNumber
- */
 export async function createNewUser(
   userEmail,
   password,
@@ -65,48 +52,487 @@ export async function createNewUser(
       email: userEmail,
       personalID: userPersonalID,
       phoneNumber: phoneNumber,
-      numerator: 0,
-      denominator: 0,
-      isActive: true,
       image: "",
       apartments: [],
+      chatsId: [],
+      bookings: [],
+      ratedBy: [],
     });
 
     return userID;
   } catch (error) {
     console.error(error);
     console.error(error.message);
-    throw Error(error.message);
+    throw new Error(error.message);
   }
 }
-export async function getAllListedApartments() {
-  let finalResult = [];
+export async function serverTime() {
+  return await serverTimestamp();
+}
+export async function getApartmentAllRates(id) {
+  const docRef = doc(db, "apartments", id);
+  const res = await getDoc(docRef);
+  return [...res.data().ratedBy];
+}
+export async function getUserAllRates(id) {
+  const docRef = doc(db, "users", id);
+  const res = await getDoc(docRef);
+  console.log(res.data(), id);
+  return [...res.data().ratedBy];
+}
+export async function getMyOldUserRating(userId) {
+  const user = auth.currentUser;
+  const Id = user.uid;
   try {
-    const q = query(collection(db, "apartments"), where("Listed", "==", true));
+    const allRatings = await getUserAllRates(userId);
+    const oldRate = allRatings.find((rate) => rate.id == Id);
+    if (oldRate !== undefined) return oldRate.rate;
+    return -1;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function getMyOldApartmentRating(apartmentId) {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  try {
+    const allRatings = await getApartmentAllRates(apartmentId);
+    // console.log("allRatings = ", allRatings);
+    const oldRate = allRatings.find((rate) => rate.id == Id);
+    if (oldRate !== undefined) return oldRate.rate;
+  } catch (error) {
+    console.error(error.message);
+  }
+  return -1;
+}
+export async function rateApartmentAndUser(
+  userId,
+  apartmentId,
+  userRate,
+  apartmentRate
+) {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  try {
+    async function removeAndUnion(object, object2, collection, id) {
+      await updateDoc(doc(db, collection, id), {
+        ratedBy: arrayRemove(object),
+      }).then(async () => {
+        await updateDoc(doc(db, collection, id), {
+          ratedBy: arrayUnion(object2),
+        });
+      });
+    }
+    let userRateNumber = parseInt(userRate);
+    let apartmentRateNumber = parseInt(apartmentRate);
+    let allUserRates = await getUserAllRates(userId);
 
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      console.log(doc.id, " => ", doc.data());
-      finalResult.push(doc.data());
+    if (
+      userRateNumber <= 5 &&
+      userRateNumber >= 1 &&
+      apartmentRateNumber <= 5 &&
+      apartmentRateNumber >= 1
+    ) {
+      const userOldRate = allUserRates.find((rate) => rate.id == Id);
+      if (userOldRate !== undefined) {
+        removeAndUnion(
+          userOldRate,
+          { id: Id, rate: userRateNumber },
+          "users",
+          userId
+        );
+      } else {
+        await updateDoc(doc(db, "users", userId), {
+          ratedBy: arrayUnion({ id: Id, rate: userRateNumber }),
+        });
+      }
+      if (apartmentId != "") {
+        let allApartmentRates = await getApartmentAllRates(apartmentId);
+        let apartmentOldRate = allApartmentRates.find((rate) => rate.id == Id);
+        if (apartmentOldRate !== undefined) {
+          removeAndUnion(
+            apartmentOldRate,
+            { id: Id, rate: apartmentRateNumber },
+            "apartments",
+            apartmentId
+          );
+          apartmentOldRate.rate = apartmentRateNumber;
+          await updateDoc(doc(db, "apartments", apartmentId), {
+            Rating: extractRating([...allApartmentRates]),
+          });
+        } else {
+          await updateDoc(doc(db, "apartments", apartmentId), {
+            ratedBy: arrayUnion({ id: Id, rate: apartmentRateNumber }),
+            Rating: extractRating([
+              ...allApartmentRates,
+              { id: Id, rate: apartmentRateNumber },
+            ]),
+          });
+        }
+      }
+    } else {
+      throw new Error("Please enter a valid rating value");
+    }
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+const googleDateToJavaDate = (
+  timestamp = { nanoseconds: 0, seconds: 1676563345 }
+) => {
+  return new Date(
+    timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
+  ).toLocaleDateString("en-US");
+};
+export async function confirmABooking(
+  bookingId,
+  apartment1Id,
+  apartment2Id,
+  fromDate,
+  toDate
+) {
+  console.log("falseDates = >", fromDate, toDate);
+  try {
+    const DBBooking = await getBookingById(bookingId);
+    if (DBBooking.cancelled) throw new Error("Booking got already cancelled");
+
+    if (apartment1Id != "") {
+      const apart1 = await getValidApartmentById(apartment1Id);
+      if (apart1.booked)
+        throw new Error("can't make a booking with already booked apartment");
+    }
+    const apart2 = await getValidApartmentById(apartment2Id);
+    if (apart2.booked)
+      throw new Error("can't make a booking with already booked apartment");
+    await updateDoc(doc(db, "bookings", bookingId), {
+      confirmed: true,
     });
+    if (apartment1Id != "")
+      await updateDoc(doc(db, "apartments", apartment1Id), {
+        booked: true,
+        bookingId: bookingId,
+        FromDate: new Date(fromDate),
+        ToDate: new Date(toDate),
+      });
+    await updateDoc(doc(db, "apartments", apartment2Id), {
+      booked: true,
+      bookingId: bookingId,
+      FromDate: new Date(fromDate),
+      ToDate: new Date(toDate),
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function cancelABooking(bookingId) {
+  try {
+    await updateDoc(doc(db, "bookings", bookingId), {
+      cancelled: true,
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function removeABooking(bookingId, deletion = false) {
+  // if (!otherUserId) throw new Error("The other user no assigned");
+  const user = auth.currentUser;
+  const Id = user.uid;
+  try {
+    await updateDoc(doc(db, "users", Id), {
+      bookings: arrayRemove(bookingId),
+    });
+    if (deletion) await deleteDoc(doc(db, "bookings", bookingId));
+    else
+      await updateDoc(doc(db, "bookings", bookingId), {
+        cancelled: true,
+        toDelete: true,
+      });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function getBookingById(id) {
+  try {
+    const docRef = doc(db, "bookings", id);
+    const res = await getDoc(docRef);
+    return { ...res.data(), bookingId: id };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function getMyBookings() {
+  try {
+    const profile = await getUserData();
+    const bookings = profile.bookings;
+    const promises = bookings.map(async (id) => {
+      const docRef = doc(db, "bookings", id);
+      const res = await getDoc(docRef);
+      return { ...res.data(), bookingId: id };
+    });
+    const finalResult = await Promise.all(promises);
+    console.log("final result =>", finalResult);
+    return finalResult;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function isValidBooking(ownerId, ownerApartment, myApartmentId) {
+  let temp = new Date().setHours(0, 0, 0, 0);
+  const user = auth.currentUser;
+  const Id = user.uid;
+  console.log(Id, ownerId, ownerApartment, myApartmentId);
+  try {
+    const myAllBookings = await getMyBookings();
+    console.log("myAllBookings", myAllBookings);
+    const booking = myAllBookings.find(
+      (booking) =>
+        (booking._id2 == ownerId || booking._id2 == Id) &&
+        (booking._id1 == Id || booking._id1 == ownerId) &&
+        (booking._id2Apartment == ownerApartment ||
+          booking._id2Apartment == myApartmentId) &&
+        (booking._id1Apartment == ownerApartment ||
+          booking._id1Apartment == myApartmentId) &&
+        new Date(googleDateToJavaDate(booking.ToDate)).setHours(0, 0, 0, 0) >=
+          temp
+    );
+    if (booking) {
+      console.log("Found!");
+      return false;
+    }
+    return true;
   } catch (error) {
     throw Error(error.message);
   }
+}
+export async function StartABooking(
+  ownerId,
+  ownerApartment,
+  ownerApartmentImage,
+  isMoney,
+  myApartmentId,
+  myApartmentImage,
+  moneyAmount,
+  fromDate,
+  toDate
+) {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  let result = Id.localeCompare(ownerId);
+  if (result == 0) throw new Error("Cant make a booking with yourself");
+  if (isMoney) myApartmentId = "";
+  else moneyAmount = "0";
+  try {
+    const Valid = await isValidBooking(ownerId, ownerApartment, myApartmentId);
+    if (!Valid) {
+      console.log("notValid");
+      console.log("Remove old booking first");
+      throw new Error("Remove old booking first");
+    }
+    const ap1 = await getValidApartmentById(ownerApartment);
+    if (ap1.booked) throw new Error("Cant book already booked apartment");
+    if (myApartmentId != "") {
+      const myAp = await getValidApartmentById(myApartmentId);
+      if (myAp.booked) throw new Error("Cant book already booked apartment");
+    }
+
+    const docRef = await addDoc(collection(db, "bookings"), {
+      _id2: ownerId,
+      _id2Apartment: ownerApartment,
+      _id2ApartmentImage: ownerApartmentImage,
+      _id1: Id,
+      _id1Apartment: myApartmentId,
+      _id1ApartmentImage: myApartmentImage,
+      FromDate: new Date(fromDate),
+      ToDate: new Date(toDate),
+      Money: moneyAmount,
+      byMoney: isMoney,
+      confirmed: false,
+      cancelled: false,
+      toDelete: false,
+    });
+    let docId = docRef.id;
+    console.log("Document written with ID: ", docRef.id);
+    await updateDoc(doc(db, "users", Id), {
+      bookings: arrayUnion(docId),
+    });
+    await updateDoc(doc(db, "users", ownerId), {
+      bookings: arrayUnion(docId),
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export function getChatId(otherUserId) {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  let newChatId = "z ";
+  let result = Id.localeCompare(otherUserId);
+  if (result == 0) {
+    throw new Error("Can't create a chat with the yourself");
+  } else if (result > 0) newChatId += Id + " " + otherUserId;
+  else newChatId += otherUserId + " " + Id;
+  return newChatId;
+}
+export function getApartmentChatId(otherApartmentId) {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  let newChatId = "x ";
+  let result = Id.localeCompare(otherApartmentId);
+  if (result == 0) {
+    throw new Error("Can't create a chat with the yourself");
+  } else if (result > 0) newChatId += Id + " " + otherApartmentId;
+  else newChatId += otherApartmentId + " " + Id;
+  return newChatId;
+}
+export async function startAChat(otherUserId) {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  let newChatId = getChatId(otherUserId);
+  const UserProfile = await getUserData();
+  if (UserProfile.chatsId.includes(newChatId)) return newChatId;
+  await updateDoc(doc(db, "users", Id), {
+    chatsId: arrayUnion(newChatId),
+  });
+  await updateDoc(doc(db, "users", otherUserId), {
+    chatsId: arrayUnion(newChatId),
+  });
+  return newChatId;
+}
+export function getMyId() {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  return Id;
+}
+export function getMyEmail() {
+  return auth.currentUser.email;
+}
+export async function getChatingWithPeople() {
+  const user = auth.currentUser;
+  // console.log("user", user.email);
+  const Id = user.uid;
+  const UserProfile = await getUserData();
+  const chats = UserProfile.chatsId;
+  let usersIds = [];
+  chats.forEach((chatId) => {
+    let users = chatId.split(" ");
+    if (users[1] === Id) usersIds.push(users[2]);
+    else usersIds.push(users[1]);
+  });
+  let finalResult = await Promise.all(
+    usersIds.map(async (id) => {
+      let temp = await getApartmentOwner(id);
+      return { ...temp, id: id };
+    })
+  );
   return finalResult;
+}
+export async function getApartmentOwner(userId) {
+  const docRef = doc(db, "users", userId);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    let result = docSnap.data();
+    return {
+      ...docSnap.data(),
+      Rating: extractRating(result.ratedBy),
+      userId: userId,
+    };
+  } else {
+    throw new Error("No such user");
+    // console.log("No such document!");
+  }
+}
+export async function getAllListedApartments() {
+  const finalResult = [];
+  try {
+    const nowDate = Timestamp.fromDate(new Date());
+    const q = query(
+      collection(db, "apartments"),
+      where("ToDate", ">", nowDate)
+    );
+
+    const querySnapshot = await getDocs(q);
+    console.log("querySnapshot = ", querySnapshot);
+    querySnapshot.forEach((doc) => {
+      let apartmentId = doc.id;
+      console.log(doc.id, " => ", doc.data());
+      if (doc.data().Listed)
+        finalResult.push({ ...doc.data(), apartmentId: apartmentId });
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+  return finalResult;
+}
+function extractRating(array) {
+  let sum = 0;
+  array.forEach((object) => {
+    object.rate > 0 ? (sum += object.rate) : (sum = sum);
+  });
+  let result = array.length > 0 ? sum / array.length : 0;
+  console.log(result, array);
+  return result;
+}
+export async function getValidApartmentById(id) {
+  let temp = new Date().setHours(0, 0, 0, 0);
+  try {
+    const docRef = doc(db, "apartments", id);
+    const res = await getDoc(docRef);
+    if (res.exists()) {
+      let result = res.data();
+      if (result.booked) {
+        console.log("checking booked apartment");
+        if (
+          new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0) <
+          temp
+        ) {
+          console.log("fixing booked apartment");
+          await updateDoc(doc(db, "apartments", id), {
+            booked: false,
+            bookingId: "",
+          });
+          return await getValidApartmentById(id);
+        }
+      }
+      return {
+        ...result,
+        apartmentId: id,
+        Rating: extractRating(result.ratedBy),
+      };
+    }
+  } catch (error) {
+    throw new Error(error.message);
+  }
 }
 export async function getMyApartments() {
   try {
     const profile = await getUserData();
     const apartments = profile.apartments;
     const promises = apartments.map(async (id) => {
-      const docRef = doc(db, "apartments", id);
-      const res = await getDoc(docRef);
-      return { ...res.data(), apartmentId: id };
+      return await getValidApartmentById(id);
     });
     const finalResult = await Promise.all(promises);
     console.log("final result =>", finalResult);
     return finalResult;
-  } catch (error) {}
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+export async function getOwnerListedApartments(apartmentsId) {
+  function isListed(value) {
+    return value.Listed;
+  }
+  try {
+    const apartments = apartmentsId;
+    const promises = apartments.map(async (id) => {
+      return await getValidApartmentById(id);
+    });
+    const finalResult = await Promise.all(promises);
+    console.log("final result =>", finalResult);
+    return finalResult.filter(isListed);
+  } catch (error) {
+    throw new Error(error.message);
+  }
 }
 export async function editApartment(
   apartmentId,
@@ -127,6 +553,10 @@ export async function editApartment(
   const user = auth.currentUser;
   const Id = user.uid;
   try {
+    const toDeleteApartment = await getValidApartmentById(apartmentId);
+    if (toDeleteApartment.booked) {
+      throw new Error("Cant edit booked apartment");
+    }
     let time = new Date().getTime();
     if (!(imageAssets.length === 0)) {
       let imagesUri = [];
@@ -181,6 +611,10 @@ export async function removeApartment(apartmentId) {
   const user = auth.currentUser;
   const Id = user.uid;
   try {
+    const toDeleteApartment = await getValidApartmentById(apartmentId);
+    if (toDeleteApartment.booked) {
+      throw new Error("Cant remove booked apartment");
+    }
     await updateDoc(doc(db, "users", Id), {
       apartments: arrayRemove(apartmentId),
     });
@@ -221,10 +655,13 @@ export async function addANewApartment(
       Belcony: belcony,
       FromDate: new Date(fromDate),
       ToDate: new Date(toDate),
-      numerator: 0,
-      denominator: 0,
-      RentHistory: [],
+      // numerator: 0,
+      // denominator: 0,
+      Rating: 0,
+      bookingId: "",
       Listed: false,
+      booked: false,
+      ratedBy: [],
     });
     let docId = docRef.id;
     console.log("Document written with ID: ", docRef.id);
@@ -255,33 +692,38 @@ export async function updateUserProfile(profile) {
   let setImage = false;
   if (!(Object.keys(profile.imageAssets).length === 0)) {
     setImage = true;
-    await uploadImageAsync(Id, profile.imageAssets)
-      .then(async (uri) => {
-        profile.image = uri;
-        await updateDoc(
-          doc(db, "users", Id),
-          setImage
-            ? {
-                name: profile.name,
-                personalID: profile.personalID,
-                phoneNumber: profile.phoneNumber,
-                image: profile.image,
-              }
-            : {
-                name: profile.name,
-                personalID: profile.personalID,
-                phoneNumber: profile.phoneNumber,
-              }
-        )
-          .then()
-          .catch((error) => {
-            throw Error(error.message);
-          });
-      })
-      .catch((error) => {
-        throw Error(error.message);
-      });
+    profile.image = await uploadImageAsync(Id, profile.imageAssets);
   }
+  await updateDoc(
+    doc(db, "users", Id),
+    setImage
+      ? {
+          name: profile.name,
+          personalID: profile.personalID,
+          phoneNumber: profile.phoneNumber,
+          image: profile.image,
+        }
+      : {
+          name: profile.name,
+          personalID: profile.personalID,
+          phoneNumber: profile.phoneNumber,
+        }
+  ).catch((error) => {
+    throw Error(error.message);
+  });
+}
+export async function passwordRecoveryEmail(email) {
+  const auth = getAuth();
+
+  await sendPasswordResetEmail(auth, email)
+    .then(() => {
+      return true;
+    })
+    .catch((error) => {
+      const errorMessage = error.message;
+      throw new Error(errorMessage);
+      // ..
+    });
 }
 export async function logIn(email, password) {
   await signInWithEmailAndPassword(auth, email, password)
@@ -289,13 +731,13 @@ export async function logIn(email, password) {
       // Signed in
       const user = userCredential.user;
       console.log("singedInUserCredentials", user);
-      return true;
+      // return true;
       // ...
     })
     .catch((error) => {
       const errorCode = error.code;
       const errorMessage = error.message;
-      throw Error(error.message);
+      throw new Error(error.message);
       // return error;
     });
 }
@@ -304,12 +746,12 @@ export async function getUserData() {
   const Id = user.uid;
   const docRef = doc(db, "users", Id);
   const docSnap = await getDoc(docRef);
-  console.log(docSnap.data());
+  // console.log(docSnap.data());
   if (docSnap.exists()) {
-    return docSnap.data();
+    let result = docSnap.data();
+    return { ...result, Rating: extractRating(result.ratedBy) };
   }
   signOutUser();
-  return "";
 }
 export async function signOutUser() {
   await signOut(auth)
@@ -416,7 +858,7 @@ export async function uploadImageAsync(id, file) {
 export async function getProfileIcon() {
   const storageRef = ref(storage);
   const profileIcon = await ref(storageRef, "profile.png");
-  console.log("returning as icon => ", profileIcon);
+  // console.log("returning as icon => ", profileIcon);
   return profileIcon;
 }
 // export async function handleSignUp(email, password) {

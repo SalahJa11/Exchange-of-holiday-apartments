@@ -18,9 +18,6 @@ import { getUserData } from "../config/cloud";
 import Processing from "../components/Processing";
 
 export default function StartScreen({ navigation }) {
-  const wait = (timeout) => {
-    return new Promise((resolve) => setTimeout(resolve, timeout));
-  };
   const [isProcessing, setIsProcessing] = useState(false);
   useEffect(() => {
     setIsProcessing(true);
@@ -30,23 +27,18 @@ export default function StartScreen({ navigation }) {
           setIsProcessing(true);
           const uid = user.uid;
           console.log("user signed in", uid);
-          wait()
-            .then(() => {
-              getUserData()
-                .then((profile) => {
-                  console.log("profile = ", profile);
-                  if (profile == "") {
-                    console.log("sign out function required !");
-                    setIsProcessing(false);
-                  } else {
-                    navigation.replace("HomeScreen", {
-                      paramKey: profile,
-                    });
-                  }
-                })
-                .catch((error) => {
-                  setIsProcessing(false);
+
+          getUserData()
+            .then((profile) => {
+              console.log("profile = ", profile);
+              if (profile == "") {
+                console.log("sign out function required !");
+                setIsProcessing(false);
+              } else {
+                navigation.replace("HomeScreen", {
+                  paramKey: profile,
                 });
+              }
             })
             .catch((error) => {
               setIsProcessing(false);
