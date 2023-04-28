@@ -18,7 +18,7 @@ import { theme } from "../core/theme";
 import { nameValidator } from "../helpers/nameValidator";
 import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
 import { idValidator } from "../helpers/idValidator";
-import { updateUserProfile } from "../config/cloud";
+import { passwordRecoveryEmail, updateUserProfile } from "../config/cloud";
 import * as ImagePicker from "expo-image-picker";
 export default function ProfileUpdate({ navigation, route }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -95,6 +95,22 @@ export default function ProfileUpdate({ navigation, route }) {
 
     // uploadImageToDatabase(imageAssets);
   };
+  const handlePasswordUpdate = async () => {
+    setIsProcessing(true);
+    await passwordRecoveryEmail(profile.email)
+      .then(() => {
+        setIsProcessing(false);
+        setNoteTitle("Note");
+        setNoteContent("Password reset email was sent");
+        setNoteVisible(true);
+      })
+      .catch((error) => {
+        setIsProcessing(false);
+        setErrorTitle("Error");
+        setErrorContent(error.message);
+        setErrorVisible(true);
+      });
+  };
   return (
     <Background>
       {/* <BackButton goBack={navigation.goBack} /> */}
@@ -122,7 +138,7 @@ export default function ProfileUpdate({ navigation, route }) {
               />
             </TouchableOpacity>
 
-            <Text style={[styles.modalText, { color: "white", fontSize: 15 }]}>
+            <Text style={[styles.modalText, { color: "white", fontSize: 18 }]}>
               Click on image to update it
             </Text>
           </View>
@@ -135,7 +151,6 @@ export default function ProfileUpdate({ navigation, route }) {
           >
             {/* <Text style={styles.modalText}>Id: </Text> */}
             <TextInput
-              style={styles.modalTextInput}
               defaultValue={profile.personalID}
               label="ID"
               returnKeyType="next"
@@ -153,7 +168,6 @@ export default function ProfileUpdate({ navigation, route }) {
           >
             {/* <Text style={styles.modalText}>Name: </Text> */}
             <TextInput
-              style={styles.modalTextInput}
               defaultValue={profile.name}
               label="Name"
               returnKeyType="next"
@@ -170,7 +184,6 @@ export default function ProfileUpdate({ navigation, route }) {
           >
             {/* <Text style={styles.modalText}>Phone number: </Text> */}
             <TextInput
-              style={styles.modalTextInput}
               defaultValue={profile.phoneNumber}
               label="Phone Number"
               returnKeyType="done"
@@ -183,6 +196,39 @@ export default function ProfileUpdate({ navigation, route }) {
               keyboardType="phone-pad"
             ></TextInput>
           </View>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              display: "flex",
+              margin: 5,
+              flex: 1,
+              borderRadius: 5,
+              backgroundColor: theme.colors.primary,
+              height: 50,
+              justifyContent: "center",
+            }}
+            onPress={() => {
+              handlePasswordUpdate();
+            }}
+          >
+            <Text
+              style={{
+                alignSelf: "center",
+                fontSize: 20,
+                fontWeight: "bold",
+                color: "white",
+              }}
+            >
+              <Text style={styles.modalText}>
+                Ask for password update by email
+              </Text>
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.profilePressableButtonsView}>
           <TouchableOpacity

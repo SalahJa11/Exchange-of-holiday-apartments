@@ -1,12 +1,15 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { theme } from "../core/theme";
 
-const Background = ({ children }) => {
+const BackgroundForScroll = ({ children }) => {
   return (
-    <View style={styles.backgroundContainer}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : ""}
+      style={styles.backgroundContainer}
+    >
       <View style={styles.backgroundContentContainer}>{children}</View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -29,4 +32,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Background;
+export default BackgroundForScroll;

@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderWidth: 3,
-    borderColor: "#1c6669",
+    borderColor: theme.colors.primary,
   },
 
   processingAlertTextStyle: {

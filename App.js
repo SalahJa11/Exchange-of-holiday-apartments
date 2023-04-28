@@ -32,7 +32,13 @@ export default function App() {
         <Stack.Navigator
           initialRouteName="StartScreen"
           screenOptions={{
+            headerTintColor: "white",
+            headerPressColor: "#fffbe4",
             headerShown: true,
+
+            headerStyle: {
+              backgroundColor: theme.colors.primary,
+            },
           }}
         >
           <Stack.Screen
@@ -61,7 +67,11 @@ export default function App() {
             options={{ title: "Map" }}
             component={AvailableApartments}
           />
-          <Stack.Screen name="MyBookings" component={MyBookings} />
+          <Stack.Screen
+            name="MyBookings"
+            options={{ title: "My bookings " }}
+            component={MyBookings}
+          />
           <Stack.Screen
             name="AddMyApartment"
             options={{ title: "My apartments " }}
@@ -74,6 +84,7 @@ export default function App() {
           />
           <Stack.Screen
             name="AddMyApartmentForm"
+            options={{ title: "Adding new apartment/house" }}
             component={AddMyApartmentForm}
           />
           <Stack.Screen

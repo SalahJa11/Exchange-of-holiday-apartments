@@ -50,7 +50,6 @@ export default function ResetPasswordScreen({ navigation }) {
         setErrorVisible(true);
       });
   }
-
   return (
     <Background>
       <BackButton goBack={navigation.goBack} />

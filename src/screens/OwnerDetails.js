@@ -20,6 +20,10 @@ import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
 import { idValidator } from "../helpers/idValidator";
 import { getOwnerListedApartments } from "../config/cloud";
 import * as ImagePicker from "expo-image-picker";
+import { googleDateToJavaDate } from "../helpers/DateFunctions";
+import FlashMessage, { showMessage } from "react-native-flash-message";
+import { TOAST } from "../core/TOASTText";
+
 export default function OwnerDetails({ navigation, route }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
@@ -54,14 +58,67 @@ export default function OwnerDetails({ navigation, route }) {
     try {
       console.log(profile.apartments);
       const res = await getOwnerListedApartments(profile.apartments);
-      console.log(res);
-      setApartments([...res]);
+      let temp = [...res];
+      temp = saveStatus(temp);
+      setApartments([...temp]);
+      styleHeader();
     } catch (error) {
       console.error(error);
       // setIsProcessing(false);
     }
     // setIsProcessing(false);
   }
+  const styleHeader = (owner) => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ flexDirection: "row" }}>
+          {/* <Text style={{ textAlignVertical: "center" }}>
+            {owner.name.slice(0, 15)}
+          </Text> */}
+          <TouchableOpacity
+            style={{ marginRight: 20, width: 30, height: 30 }}
+            onPress={() => {
+              showMessage(TOAST.OwnerDetails);
+            }}
+          >
+            <Image
+              style={{ width: 30, height: 30, tintColor: "white" }}
+              // rounded
+
+              source={require("../assets/help2.png")}
+            />
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  };
+  const saveStatus = (apartmentsArray) => {
+    // console.log("apartmentsArrayLength = ", apartmentsArray.length, apartmentsArray);
+    const dateTemp = new Date().setHours(0, 0, 0, 0);
+    const res = apartmentsArray.map((element) => {
+      let newElement = { ...element };
+      if (element.booked) {
+        newElement.status = "Booked";
+        console.log("Booked");
+      } else if (
+        new Date(googleDateToJavaDate(element.ToDate)).setHours(0, 0, 0, 0) <
+        dateTemp
+      ) {
+        newElement.status = "Expired";
+        console.log("Expired");
+      } else if (element.Listed) {
+        newElement.status = "Listed";
+        console.log("Listed");
+      } else {
+        newElement.status = "Not Listed";
+        console.log("Not Listed");
+      }
+      console.log("i");
+      return newElement;
+    });
+    // console.log(res);
+    return res;
+  };
   const everyHouseCard = () => {
     let result = [];
     apartments.forEach((element, index) => {
@@ -70,14 +127,14 @@ export default function OwnerDetails({ navigation, route }) {
           activeOpacity={0.8}
           key={index}
           onLongPress={() => {
-            navigation.push("ApartmentInfo", {
+            navigation.navigate("ApartmentInfo", {
               paramKey: apartments[index],
             });
           }}
           style={{
             width: "100%",
             aspectRatio: 1,
-            marginTop: 18,
+            marginVertical: 8,
           }}
         >
           <Image
@@ -86,8 +143,8 @@ export default function OwnerDetails({ navigation, route }) {
               aspectRatio: 1,
               borderTopRightRadius: 20,
               borderTopLeftRadius: 20,
-              borderBottomLeftRadius: 5,
-              borderBottomRightRadius: 5,
+              borderBottomLeftRadius: 20,
+              borderBottomRightRadius: 20,
               resizeMode: "cover",
             }}
             source={{ uri: element.Image }}
@@ -95,14 +152,16 @@ export default function OwnerDetails({ navigation, route }) {
           {element.Name && (
             <View
               style={{
-                backgroundColor: "white",
+                backgroundColor: "black",
                 opacity: 0.75,
                 width: "100%",
                 position: "relative",
                 bottom: 50,
-                paddingLeft: 5,
-                paddingRight: 5,
+                paddingLeft: 10,
+                paddingRight: 10,
                 flexDirection: "row",
+                borderBottomLeftRadius: 20,
+                borderBottomRightRadius: 20,
               }}
             >
               <Text
@@ -111,9 +170,11 @@ export default function OwnerDetails({ navigation, route }) {
                   height: 50,
                   fontSize: 20,
                   textAlignVertical: "center",
+                  color: "white",
+                  fontWeight: "bold",
                 }}
               >
-                {element.Name}
+                {element.Name.slice(0, 30)}
               </Text>
               <Text
                 style={{
@@ -121,14 +182,16 @@ export default function OwnerDetails({ navigation, route }) {
                   height: 50,
                   fontSize: 15,
                   borderLeftWidth: 3,
+                  borderColor: "white",
                   textAlign: "center",
                   textAlignVertical: "center",
-                  color: "black",
+                  color: "white",
                 }}
               >
                 {"Rating "}
                 {element.Rating}
-                {/* {element.Listed ? "Listed" : "Not listed"} */}
+                {"\n"}
+                {element.status}
               </Text>
             </View>
           )}
@@ -140,6 +203,7 @@ export default function OwnerDetails({ navigation, route }) {
   return (
     <Background>
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
         style={{
           height: "100%",
@@ -155,11 +219,11 @@ export default function OwnerDetails({ navigation, route }) {
               }
             />
 
-            <Text style={styles.name}>{profile.name}</Text>
+            <Text style={{ color: "black", fontSize: 24 }}>{profile.name}</Text>
           </View>
         </View>
         <View style={styles.DetailsContainer}>
-          <Text style={styles.ProfileDetails}>Id: {profile.personalID}</Text>
+          {/* <Text style={styles.ProfileDetails}>Id: {profile.personalID}</Text> */}
           <Text style={styles.ProfileDetails}>Email: {profile.email}</Text>
           <Text style={styles.ProfileDetails}>
             Phone number: {profile.phoneNumber}
@@ -187,10 +251,23 @@ export default function OwnerDetails({ navigation, route }) {
       ></Note>
 
       <Processing visible={isProcessing} content={"Updating..."}></Processing>
+      <FlashMessage position="bottom" floating={true} />
     </Background>
   );
 }
 const styles = StyleSheet.create({
+  ProfileDetails: {
+    borderWidth: 1,
+    padding: 2,
+    margin: 3,
+    textAlign: "center",
+    textAlignVertical: "center",
+    fontSize: 15,
+    fontWeight: "bold",
+    backgroundColor: theme.colors.primaryBackground,
+    borderColor: theme.colors.primaryBorder,
+    borderRadius: 5,
+  },
   headerContent: {
     padding: 30,
     alignItems: "center",

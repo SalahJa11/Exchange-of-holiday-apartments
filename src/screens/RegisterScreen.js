@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Modal, Text } from "react-native-paper";
 import Background from "../components/Background";
 import Logo from "../components/Logo";
@@ -14,6 +21,8 @@ import { nameValidator } from "../helpers/nameValidator";
 import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
 import { idValidator } from "../helpers/idValidator";
 import { createNewUser, getUserData } from "../config/cloud";
+import Processing from "../components/Processing";
+import BackgroundForScroll from "../components/BackgroundForScroll";
 
 export default function RegisterScreen({ navigation }) {
   const wait = (timeout) => {
@@ -23,6 +32,7 @@ export default function RegisterScreen({ navigation }) {
   const [alertTitle, setAlertTitle] = useState("Error");
   const [alertContent, setAlertContent] = useState("An error occurred");
   const [isAleretVisible, setIsAlertVisible] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [name, setName] = useState({ value: "", error: "" });
   const [email, setEmail] = useState({ value: "", error: "" });
@@ -30,7 +40,7 @@ export default function RegisterScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState({ value: "", error: "" });
   const [id, setId] = useState({ value: "", error: "" });
 
-  const onSignUpPressed = () => {
+  const onSignUpPressed = async () => {
     const nameError = nameValidator(name.value);
     const emailError = emailValidator(email.value);
     const passwordError = passwordValidator(password.value);
@@ -52,7 +62,8 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
     // console.log("in register", email, password, name, id, phoneNumber);
-    createNewUser(
+    setIsProcessing(true);
+    await createNewUser(
       email.value,
       password.value,
       name.value,
@@ -60,29 +71,37 @@ export default function RegisterScreen({ navigation }) {
       phoneNumber.value
     )
       .then((id) => {
-        wait().then(() => {
-          getUserData(id).then((profile) => {
-            console.log("profile = ", profile);
-            if (profile == "") {
-              console.log("sign out function required !");
-            } else {
-              navigation.replace("HomeScreen", {
-                paramKey: profile,
-              });
-            }
-          });
+        getUserData(id).then(async (profile) => {
+          setIsProcessing(false);
+          console.log("profile = ", profile);
+          if (profile == "") {
+            console.log("sign out function required !");
+          } else {
+            await sendEmailVerification(auth.currentUser).then(() => {
+              setNoteTitle("Note");
+              setNoteContent(
+                "Please check your email\n A verification email has been sent to your email"
+              );
+              setNoteVisible(true);
+            });
+          }
         });
       })
       .catch((error) => {
+        setIsProcessing(false);
         setAlertContent(error.message);
         setIsAlertVisible(true);
       });
   };
-
   return (
-    <Background>
+    <BackgroundForScroll>
       {/* <BackButton goBack={navigation.goBack} /> */}
+      {/* <KeyboardAvoidingView
+        behavior={Platform.OS ? "padding" : ""}
+        style={{ width: "100%" }}
+      > */}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         style={styles.ScrollView1}
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
       >
@@ -141,9 +160,9 @@ export default function RegisterScreen({ navigation }) {
             mode="contained"
             onPress={onSignUpPressed}
             style={{ marginTop: 24 }}
-          >
-            Sign Up
-          </Button>
+            title={"Sign Up"}
+          />
+
           <View style={styles.row}>
             <Text>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.replace("LoginScreen")}>
@@ -152,6 +171,7 @@ export default function RegisterScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
+      {/* </KeyboardAvoidingView> */}
       <Modal visible={isAleretVisible}>
         <View style={styles.alertContainer}>
           <View style={styles.alertContentContainer}>
@@ -170,7 +190,8 @@ export default function RegisterScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </Background>
+      <Processing visible={isProcessing} content={"Updating..."}></Processing>
+    </BackgroundForScroll>
   );
 }
 

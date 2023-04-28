@@ -1,32 +1,55 @@
-import React from 'react'
-import { StyleSheet } from 'react-native'
-import { Button as PaperButton } from 'react-native-paper'
-import { theme } from '../core/theme'
+import React from "react";
+import { StyleSheet, TouchableOpacity, Text } from "react-native";
+import { Button as PaperButton } from "react-native-paper";
+import { theme } from "../core/theme";
 
-export default function Button({ mode, style, ...props }) {
+export default function Button({ mode, title, style, ...props }) {
   return (
-    <PaperButton
+    <TouchableOpacity
       style={[
         styles.button,
-        mode === 'outlined' && { backgroundColor: theme.colors.surface },
-        style,
+        mode === "outlined"
+          ? {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.primaryBorder,
+            }
+          : {},
+        ,
+        { ...style },
       ]}
-      labelStyle={styles.text}
-      mode={mode}
       {...props}
-    />
-  )
+    >
+      <Text
+        style={[
+          styles.text,
+          mode === "outlined"
+            ? { color: theme.colors.primary }
+            : { color: "white" },
+        ]}
+      >
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
   button: {
-    width: '100%',
+    justifyContent: "center",
+    borderWidth: 2,
+    borderRadius: 20,
+    height: 50,
+    width: "100%",
     marginVertical: 10,
-    paddingVertical: 2,
+    // paddingVertical: 2,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   text: {
-    fontWeight: 'bold',
+    textAlignVertical: "center",
+    textAlign: "center",
+    fontWeight: "bold",
     fontSize: 15,
     lineHeight: 26,
   },
-})
+});

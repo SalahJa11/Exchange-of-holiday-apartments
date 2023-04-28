@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Background from "../components/Background";
 // import MapView from "react-native-maps";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { Marker } from "react-native-maps";
 import {
   Image,
@@ -12,6 +12,7 @@ import {
   View,
   Modal,
   TextInput as ReactTextInput,
+  Platform,
 } from "react-native";
 import { Checkbox } from "react-native-paper";
 import BackButton from "../components/BackButton";
@@ -20,6 +21,7 @@ import Processing from "../components/Processing";
 import TextInput from "../components/TextInput";
 import { theme } from "../core/theme";
 import { numberValidatorAndEmpty } from "../helpers/numberValidatorAndEmpty";
+import Error from "../components/Error";
 export default function AvailableApartments({ navigation }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [rooms, setRooms] = useState({ value: "", value2: "", error: "" });
@@ -74,6 +76,14 @@ export default function AvailableApartments({ navigation }) {
     // },
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("ErrorTitle");
+  const [errorContent, setErrorContent] = useState("error");
+  const toCloseError = () => {
+    typeof setErrorVisible === "function" ? setErrorVisible(false) : null;
+    typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
+    typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
+  };
   useEffect(() => {
     fetchData();
     setIsProcessing(false);
@@ -86,10 +96,13 @@ export default function AvailableApartments({ navigation }) {
       console.log("new res = ", res, res[0].ToDate);
       setApartments([...res]);
       setApartmentsTemp([...res]);
-      console.log("new apartments = ", apartments);
-      console.log("apartmentId = ", apartments[0].apartmentId);
+      // console.log("new apartments = ", apartments);
+      // console.log("apartmentId = ", apartments[0].apartmentId);
     } catch (error) {
+      setErrorTitle("Error");
+      setErrorContent(error.message);
       setIsProcessing(false);
+      setErrorVisible(true);
     }
     setIsProcessing(false);
   }
@@ -106,7 +119,7 @@ export default function AvailableApartments({ navigation }) {
               latitude: apartment.Location[0],
               longitude: apartment.Location[1],
             }}
-            title={apartment.Name}
+            title={apartment.Name.slice(0, 15)}
             description={"Press for more info"}
             onCalloutPress={() => {
               navigation.navigate("ApartmentInfo", {
@@ -114,6 +127,23 @@ export default function AvailableApartments({ navigation }) {
               });
             }}
           >
+            {Platform.OS === "ios" && (
+              <Callout
+                style={{ width: 100 }}
+                onPress={() => {
+                  navigation.navigate("ApartmentInfo", {
+                    paramKey: apartment,
+                  });
+                }}
+              >
+                <View style={{ alignItems: "center" }}>
+                  <Text style={{ fontSize: 12, fontWeight: "bold" }}>
+                    {apartment.Name.slice(0, 15)}
+                  </Text>
+                  <Text style={{ fontSize: 11 }}>Press for more info</Text>
+                </View>
+              </Callout>
+            )}
             <Image
               source={{ uri: apartment.Image }}
               style={{ height: 35, width: 35 }}
@@ -388,7 +418,14 @@ export default function AvailableApartments({ navigation }) {
   };
   const filterWindow = () => {
     return (
-      <Modal animationType="slide" transparent={true} visible={isModalVisible}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => {
+          setModalVisible(!isModalVisible);
+        }}
+      >
         <View style={styles.modalView}>
           {write()}
           <View>
@@ -475,49 +512,78 @@ export default function AvailableApartments({ navigation }) {
       {/* <BackButton goBack={navigation.goBack} /> */}
       {/*start your code here*/}
       {/* <Text>its AvailableApartments page start your code here</Text> */}
-
-      <TouchableOpacity
-        onPress={() => setIsModalVisible(true)}
-        style={{
-          width: "100%",
-          height: 30,
-          marginTop: 20,
-          flexDirection: "row",
-        }}
-      >
-        <Text style={{ flex: 3 }}>Filter</Text>
-        <Image
-          source={require("../assets/filter.png")}
-          style={{ height: 30, width: 30 }}
-        ></Image>
-      </TouchableOpacity>
-
       <View
         style={{
+          justifyContent: "space-between",
           width: "100%",
           height: "100%",
-          paddingBottom: 5,
         }}
       >
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={styles.map}
-          initialRegion={{
-            latitude: 31.769218,
-            longitude: 35.164061,
-            latitudeDelta: 0.3,
-            longitudeDelta: 0.3,
+        <TouchableOpacity
+          onPress={() => setIsModalVisible(true)}
+          style={styles.locationAndImagesBoxes}
+        >
+          <Text
+            style={{
+              textAlignVertical: "center",
+              marginRight: 10,
+              color: "black",
+              fontWeight: "bold",
+            }}
+          >
+            Filter
+          </Text>
+          <Image
+            source={require("../assets/filter.png")}
+            style={{ height: 30, width: 30 }}
+          ></Image>
+        </TouchableOpacity>
+        <View
+          style={{
+            width: "100%",
+            flex: 1,
           }}
         >
-          {apartmentMarker()}
-        </MapView>
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={{
+              latitude: 31.769218,
+              longitude: 35.164061,
+              latitudeDelta: 0.3,
+              longitudeDelta: 0.3,
+            }}
+          >
+            {apartmentMarker()}
+          </MapView>
+        </View>
       </View>
-      <Processing visible={isProcessing} content={"Loading..."}></Processing>
       {filterWindow()}
+      <Error
+        visible={errorVisible}
+        title={errorTitle}
+        content={errorContent}
+        onPress={() => {
+          toCloseError();
+        }}
+      />
+      <Processing visible={isProcessing} content={"Loading..."}></Processing>
     </Background>
   );
 }
 const styles = StyleSheet.create({
+  locationAndImagesBoxes: {
+    flexDirection: "row",
+    width: "100%",
+    borderWidth: 2,
+    borderColor: theme.colors.primaryBorder,
+    borderTopRightRadius: 15,
+    borderBottomLeftRadius: 15,
+    backgroundColor: theme.colors.primaryBackground,
+    justifyContent: "center",
+    marginBottom: 10,
+    marginTop: 10,
+  },
   filterBoxTitle: {
     textAlign: "center",
     textAlignVertical: "center",
@@ -539,7 +605,7 @@ const styles = StyleSheet.create({
     // display: "flex",
     margin: 5,
     flex: 1,
-    // borderRadius: 5,
+    borderRadius: 5,
     alignSelf: "center",
     backgroundColor: "#fd0000",
     width: "90%",

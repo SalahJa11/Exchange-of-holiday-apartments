@@ -11,48 +11,49 @@ import {
   View,
   ScrollView,
   StyleSheet,
+  Image,
 } from "react-native";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebase";
 import { getUserData } from "../config/cloud";
 import Processing from "../components/Processing";
+import Error from "../components/Error";
 
 export default function StartScreen({ navigation }) {
   const [isProcessing, setIsProcessing] = useState(false);
-  useEffect(() => {
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("ErrorTitle");
+  const [errorContent, setErrorContent] = useState("error");
+  const toCloseError = () => {
+    typeof setErrorVisible === "function" ? setErrorVisible(false) : null;
+    typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
+    typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
+  };
+  const fetchDate = async () => {
     setIsProcessing(true);
     try {
+      const user = auth.currentUser;
+      console.log("user = > ", user);
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          setIsProcessing(true);
-          const uid = user.uid;
-          console.log("user signed in", uid);
-
-          getUserData()
-            .then((profile) => {
-              console.log("profile = ", profile);
-              if (profile == "") {
-                console.log("sign out function required !");
-                setIsProcessing(false);
-              } else {
-                navigation.replace("HomeScreen", {
-                  paramKey: profile,
-                });
-              }
-            })
-            .catch((error) => {
-              setIsProcessing(false);
-            });
-
+          console.log("user = > ", user);
+          navigation.navigate("HomeScreen");
           setIsProcessing(false);
         } else {
-          console.log("user not signed in !", user);
           setIsProcessing(false);
         }
       });
     } catch (error) {
+      setErrorTitle("Error");
+      setErrorContent(error.message);
       setIsProcessing(false);
+      setErrorVisible(true);
     }
+  };
+  useEffect(() => {
+    setIsProcessing(true);
+    fetchDate();
+    setIsProcessing(false);
   }, []);
 
   return (
@@ -63,24 +64,33 @@ export default function StartScreen({ navigation }) {
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
       >
         <View style={styles.View2}>
-          <Logo />
-          <Header>Apartment Exchange</Header>
+          <Image
+            style={{ width: 300, height: 300, marginVertical: 10 }}
+            source={require("../assets/logoWtext.png")}
+          />
           <Button
             mode="contained"
             onPress={() => navigation.navigate("LoginScreen")}
-          >
-            Login
-          </Button>
+            title="Login"
+          />
           <Button
+            style={{ width: "100%" }}
             mode="outlined"
             onPress={() => navigation.navigate("RegisterScreen")}
-          >
-            Sign Up
-          </Button>
+            title="Sign Up"
+          />
         </View>
       </ScrollView>
 
       {/* </View> */}
+      <Error
+        visible={errorVisible}
+        title={errorTitle}
+        content={errorContent}
+        onPress={() => {
+          toCloseError();
+        }}
+      />
       <Processing visible={isProcessing} content={"Signing in..."}></Processing>
     </Background>
   );
@@ -108,7 +118,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignContent: "space-around",
-    flex: 1,
+    // flex: 1,
+    width: "100%",
+    // borderWidth: 5,
     // // position: "relative",
     // height: Dimensions.get("window").height / 1.5,
     // alignSelf: "center",

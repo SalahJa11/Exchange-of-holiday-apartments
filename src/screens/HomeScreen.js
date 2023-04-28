@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Background from "../components/Background";
 import Logo from "../components/Logo";
-import * as ImagePicker from "expo-image-picker";
 import {
   StyleSheet,
   Text,
-  // TextInput,
   Modal,
   Image,
   Pressable,
@@ -18,12 +16,7 @@ import {
 import * as paper from "react-native-paper";
 import Button from "../components/Button";
 import { theme } from "../core/theme";
-import {
-  signOutUser,
-  getProfileIcon,
-  getUserData,
-  serverTime,
-} from "../config/cloud";
+import { signOutUser, getUserData, serverTime } from "../config/cloud";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen({ navigation, route }) {
@@ -106,102 +99,124 @@ export default function HomeScreen({ navigation, route }) {
         >
           <Modal
             transparent={true}
+            animationType="slide"
             visible={modalVisible}
             onRequestClose={() => {
               setModalVisible(!modalVisible);
             }}
           >
             <ScrollView
-              style={styles.ScrollView1}
-              contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+              // style={styles.ScrollView1}
+              contentContainerStyle={{
+                margin: 15,
+                justifyContent: "space-between",
+                // alignItems: "center",
+                // height: "100%",
+                padding: 20,
+                backgroundColor: "white",
+                borderRadius: 20,
+                shadowColor: "#000",
+                elevation: 10,
+              }}
             >
-              <View style={styles.HeddinScreeen}>
-                <Pressable
-                  onPress={() => setModalVisible(!modalVisible)}
-                  style={styles.ProfileScreen}
-                >
-                  <View style={styles.header}>
-                    <View style={styles.headerContent}>
-                      <Image
-                        style={styles.avatar}
-                        source={
-                          image == ""
-                            ? require("../assets/profile.png")
-                            : { uri: image }
-                        }
-                      />
+              {/* <View style={styles.HeddinScreeen}> */}
+              <Pressable
+                onPress={() => setModalVisible(!modalVisible)}
+                style={styles.ProfileScreen}
+              >
+                <View style={styles.header}>
+                  <Text
+                    style={{
+                      top: 3,
+                      left: 10,
+                      fontSize: 50,
+                      position: "absolute",
+                      opacity: 0.3,
+                    }}
+                  >
+                    X
+                  </Text>
+                  <View style={styles.headerContent}>
+                    <Image
+                      style={styles.avatar}
+                      source={
+                        image == ""
+                          ? require("../assets/profile.png")
+                          : { uri: image }
+                      }
+                    />
 
-                      <Text style={styles.name}>{profile.name}</Text>
-                    </View>
+                    <Text style={styles.name}>{profile.name}</Text>
                   </View>
-                  <View style={styles.DetailsContainer}>
-                    <Text style={styles.ProfileDetails}>
-                      Id: {profile.personalID}
-                    </Text>
-                    <Text style={styles.ProfileDetails}>
-                      Email: {profile.email}
-                    </Text>
-                    <Text style={styles.ProfileDetails}>
-                      Phone number: {profile.phoneNumber}
-                    </Text>
-                    <Text style={styles.ProfileDetails}>
-                      Rating:{profile.Rating}
-                    </Text>
-                  </View>
-                  <View style={styles.profilePressableButtonsView}>
-                    <TouchableOpacity
-                      style={styles.profilePressableButtons}
-                      onPress={() => {
-                        wait().then(() => {
-                          setModalVisible(false);
-                          setProcessingText("Signing out...");
-                          setIsProcessing(true);
-
-                          signOutUser()
-                            .then(() => {
-                              navigation.replace("StartScreen");
-                            })
-                            .catch((error) => alert(error.message));
-                        });
-                      }}
-                    >
-                      <Text
-                        style={{
-                          alignSelf: "center",
-                          fontSize: 20,
-                          fontWeight: "bold",
-                          color: "white",
-                        }}
-                      >
-                        Sign out
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.profilePressableButtons,
-                        styles.profilePressableButtons2,
-                      ]}
-                      onPress={() => {
+                </View>
+                <View style={styles.DetailsContainer}>
+                  <Text style={styles.ProfileDetails}>
+                    Id: {profile.personalID}
+                  </Text>
+                  <Text style={styles.ProfileDetails}>
+                    Email: {profile.email}
+                  </Text>
+                  <Text style={styles.ProfileDetails}>
+                    Phone number: {profile.phoneNumber}
+                  </Text>
+                  <Text style={styles.ProfileDetails}>
+                    Rating:{profile.Rating}
+                  </Text>
+                </View>
+                <View style={styles.profilePressableButtonsView}>
+                  <TouchableOpacity
+                    style={styles.profilePressableButtons}
+                    onPress={() => {
+                      wait().then(() => {
                         setModalVisible(false);
-                        navigation.navigate("ProfileUpdate", {
-                          paramKey: profile,
-                        });
+                        setProcessingText("Signing out...");
+                        setIsProcessing(true);
+
+                        signOutUser()
+                          .then(() => {
+                            navigation.replace("StartScreen");
+                          })
+                          .catch((error) => alert(error.message));
+                      });
+                    }}
+                  >
+                    <Text
+                      style={{
+                        alignSelf: "center",
+                        fontSize: 20,
+                        fontWeight: "bold",
+                        color: "white",
                       }}
                     >
-                      <Text
-                        style={{
-                          alignSelf: "center",
-                          fontSize: 20,
-                          fontWeight: "bold",
-                          color: "white",
-                        }}
-                      >
-                        Update
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </Pressable>
-              </View>
+                      Sign out
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.profilePressableButtons,
+                      styles.profilePressableButtons2,
+                    ]}
+                    onPress={() => {
+                      setModalVisible(false);
+                      navigation.navigate("ProfileUpdate", {
+                        paramKey: profile,
+                      });
+                    }}
+                  >
+                    <Text
+                      style={{
+                        alignSelf: "center",
+                        fontSize: 20,
+                        fontWeight: "bold",
+                        color: "white",
+                      }}
+                    >
+                      Update
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Pressable>
+              {/* </View> */}
             </ScrollView>
           </Modal>
           <TouchableOpacity
@@ -227,15 +242,13 @@ export default function HomeScreen({ navigation, route }) {
             <Button
               mode="contained"
               onPress={() => navigation.navigate("AvailableApartments")}
-            >
-              Show Available Apartments
-            </Button>
+              title="Show Available Apartments"
+            />
             <Button
               mode="contained"
               onPress={() => navigation.navigate("MyBookings")}
-            >
-              Show My Bookings
-            </Button>
+              title="Show My Bookings"
+            />
             <Button
               mode="contained"
               onPress={() =>
@@ -243,15 +256,14 @@ export default function HomeScreen({ navigation, route }) {
                   paramKey: profile,
                 })
               }
-            >
-              Add My Apartment
-            </Button>
+              title=" Add My Apartment"
+            />
+
             <Button
               mode="contained"
               onPress={() => navigation.navigate("Chat")}
-            >
-              Open Chat
-            </Button>
+              title="Open Chat"
+            />
           </View>
           <paper.Modal visible={isProcessing}>
             <View style={styles.processingAlertContainer}>
@@ -342,7 +354,7 @@ const styles = StyleSheet.create({
   },
   profileIcon: {
     borderWidth: 2,
-    borderColor: "black",
+    borderColor: theme.colors.primary,
     borderRadius: 25,
     width: 50,
     height: 50,
@@ -352,10 +364,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000aa",
   },
   ProfileScreen: {
-    flex: 1,
+    width: "100%",
+    height: "100%",
+    justifyContent: "space-between",
     backgroundColor: "#ffffff",
-    margin: 40,
-    padding: 10,
+    // margin: 40,
+    // padding: 10,
     borderRadius: 10,
   },
   header: {
@@ -380,10 +394,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   DetailsContainer: {
-    flex: 1,
-    justifyContent: "space-evenly",
+    padding: 10,
+    // flex: 1,
+    justifyContent: "space-between",
   },
   ProfileDetails: {
+    marginVertical: 3,
+    textAlignVertical: "center",
     fontSize: 20,
     fontWeight: "bold",
   },

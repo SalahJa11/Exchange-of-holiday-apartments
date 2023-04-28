@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Background from "../components/Background";
 // import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TextInput } from "react-native";
 import BackButton from "../components/BackButton";
 import { getChatId, getChatingWithPeople, getMyEmail } from "../config/cloud";
 import Error from "../components/Error";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { Avatar } from "react-native-elements";
+import { theme } from "../core/theme";
 export default function Chat({ navigation }) {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorTitle, setErrorTitle] = useState("ErrorTitle");
@@ -17,6 +18,8 @@ export default function Chat({ navigation }) {
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
   const [chats, setChats] = useState([]);
+  const [tempChats, setTempChats] = useState([]);
+  const [search, setSearch] = useState("");
   useEffect(() => {
     fetchData();
     // setIsProcessing(false);
@@ -26,7 +29,8 @@ export default function Chat({ navigation }) {
     await getChatingWithPeople()
       .then((result) => {
         console.log("result is ", result);
-        setChats(result);
+        setChats([...result]);
+        setTempChats([...result]);
       })
       .catch((error) => {
         setErrorTitle("Error");
@@ -39,6 +43,7 @@ export default function Chat({ navigation }) {
     chats.forEach((user, index) => {
       let temp = (
         <TouchableOpacity
+          style={{ marginBottom: 5 }}
           key={index}
           onPress={() => {
             navigation.navigate("Chating", {
@@ -52,9 +57,8 @@ export default function Chat({ navigation }) {
         >
           <View
             style={{
-              marginLeft: 20,
+              marginLeft: 10,
               flexDirection: "row",
-              // justifyContent: "space-around",
             }}
           >
             <Avatar
@@ -69,6 +73,7 @@ export default function Chat({ navigation }) {
                 textAlignVertical: "center",
                 textAlign: "left",
                 marginLeft: 20,
+                fontSize: 16,
               }}
             >
               {user.name}
@@ -80,13 +85,43 @@ export default function Chat({ navigation }) {
     });
     return result;
   };
+  const searchFilterFunction = (text) => {
+    // Check if searched text is not blank
+    if (text) {
+      // Inserted text is not blank
+      // Filter the masterDataSource and update FilteredDataSource
+      const newData = tempChats.filter(function (item) {
+        // Applying filter for the inserted text in search bar
+        const itemData = item.name ? item.name.toUpperCase() : "".toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setChats(newData);
+      setSearch(text);
+    } else {
+      // Inserted text is blank
+      // Update FilteredDataSource with masterDataSource
+      setChats(tempChats);
+      setSearch(text);
+    }
+  };
   return (
     <Background innerStyle={{ justifyContent: "space-between" }}>
       {/* <BackButton goBack={navigation.goBack} /> */}
 
       {/*start your code here*/}
       {/* <Text>its Chating page start your code here{JSON.stringify(chats)}</Text> */}
-      <View style={{ width: "100%" }}>{listChatUsers()}</View>
+
+      <TextInput
+        style={styles.textInputStyle}
+        onChangeText={(text) => searchFilterFunction(text)}
+        value={search}
+        underlineColorAndroid="transparent"
+        placeholder="Search Here"
+      />
+      <ScrollView style={{ width: "100%", height: "100%" }}>
+        {listChatUsers()}
+      </ScrollView>
       <Error
         visible={errorVisible}
         title={errorTitle}
@@ -98,4 +133,15 @@ export default function Chat({ navigation }) {
     </Background>
   );
 }
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  textInputStyle: {
+    width: "100%",
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 5,
+    borderColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    margin: 5,
+    backgroundColor: "white",
+  },
+});

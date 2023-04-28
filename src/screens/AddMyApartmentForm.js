@@ -21,7 +21,37 @@ import { numberValidator } from "../helpers/numberValidator";
 import * as Location from "expo-location";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { addANewApartment } from "../config/cloud";
+import { fixDate } from "../helpers/DateFunctions";
+import Processing from "../components/Processing";
+import FlashMessage, {
+  showMessage,
+  hideMessage,
+} from "react-native-flash-message";
+import { TOAST } from "../core/TOASTText";
+import removeDuplicates from "../helpers/removeDuplicates";
+import Error from "../components/Error";
+import Warning from "../components/Warning";
+import BackgroundForScroll from "../components/BackgroundForScroll";
 export default function AddMyApartmentForm({ navigation }) {
+  const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("ErrorTitle");
+  const [errorContent, setErrorContent] = useState("Error");
+  const [noteVisible, setNoteVisible] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("Note");
+  const [noteContent, setNoteContent] = useState("Done");
+  const [warningVisible, setWarningVisible] = useState(false);
+  const [warningTitle, setWarningTitle] = useState("Warning");
+  const [warningContent, setWarningContent] = useState("Are you sure?");
+  const [warningGoal, setWarningGoal] = useState("None");
+
+  const toCloseError = () => {
+    typeof setErrorVisible === "function" ? setErrorVisible(false) : null;
+    typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
+    typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
+    typeof setWarningVisible2 === "function" ? setWarningVisible2(false) : null;
+  };
+
   const [checked, setChecked] = useState("apartment");
 
   const [rooms, setRooms] = useState({ value: "", error: "" });
@@ -46,10 +76,8 @@ export default function AddMyApartmentForm({ navigation }) {
   });
 
   const [checked2, setChecked2] = useState(false);
-  const [fromDate, setFromDate] = useState(
-    new Date().toLocaleDateString("en-US")
-  );
-  const [toDate, setToDate] = useState(new Date().toLocaleDateString("en-US"));
+  const [fromDate, setFromDate] = useState(new Date().getTime());
+  const [toDate, setToDate] = useState(new Date().getTime());
   const [showPicker, setShowPicker] = useState(false);
   const [showPicker2, setShowPicker2] = useState(false);
 
@@ -60,31 +88,23 @@ export default function AddMyApartmentForm({ navigation }) {
   const [isAleretVisible, setIsAlertVisible] = useState(false);
   const [isNote, setIsNote] = useState(false);
   let noteColor = "#f76300";
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleDateChange = (event, selectedDate) => {
-    // console.log("hiThere", selectedDate);
     const currentDate = selectedDate;
     if (showPicker) {
-      setFromDate(new Date(currentDate).toLocaleDateString("en-US"));
+      setFromDate(new Date(currentDate).getTime());
       if (new Date(currentDate).getTime() > new Date(toDate).getTime()) {
-        setToDate(new Date(currentDate).toLocaleDateString("en-US"));
+        setToDate(new Date(currentDate).getTime());
       }
-      // console.log("fromDate", fromDate);
     } else if (showPicker2) {
-      setToDate(new Date(currentDate).toLocaleDateString("en-US"));
-      // console.log("toDate", toDate);
+      setToDate(new Date(currentDate).getTime());
     }
     setShowPicker(false);
     setShowPicker2(false);
-    // console.log(fromDate);
-    // console.log(
-    //   "Selected date: ",
-    //   currentDate,
-    //   currentDate.toLocaleDateString("en-US")
-    // );
   };
 
-  const handleResult = () => {
+  const handleResult = async () => {
     const roomsError = numberValidator(rooms.value);
     const bedroomsError = numberValidator(bedrooms.value);
     const bathroomsError = numberValidator(bathrooms.value);
@@ -113,8 +133,8 @@ export default function AddMyApartmentForm({ navigation }) {
       setIsAlertVisible(true);
       return;
     } else {
-      console.log("JUMP");
-      addANewApartment(
+      setIsProcessing(true);
+      await addANewApartment(
         checked,
         rooms.value,
         bedrooms.value,
@@ -128,13 +148,18 @@ export default function AddMyApartmentForm({ navigation }) {
         fromDate,
         toDate
       )
-        .then(() => navigation.goBack())
+        .then(() => {
+          setIsProcessing(false);
+          navigation.goBack();
+        })
         .catch((error) => {
+          setIsProcessing(false);
           setIsNote(false);
           setAlertTitle("Error");
           setAlertContent(error.message);
           setIsAlertVisible(true);
         });
+      setIsProcessing(false);
     }
   };
   const write = () => {
@@ -294,20 +319,44 @@ export default function AddMyApartmentForm({ navigation }) {
     //   </View>
     // );
   };
+
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      aspect: [1, 1],
-    });
-    if (!result.canceled) {
-      console.log(result);
-      // setImage(result.assets[0].uri);
-      setImagesAssets(result.assets);
-      setDisplayImages(true);
-    } else {
-      setImagesAssets([]);
-      setDisplayImages(false);
+    if (status.granted === false)
+      await requestPermission().then(async (res) => {
+        if (res.granted) {
+          let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsMultipleSelection: true,
+            aspect: [1, 1],
+          });
+          if (!result.canceled) {
+            console.log(result);
+            // setImage(result.assets[0].uri);
+            setImagesAssets(
+              removeDuplicates([...imagesAssets, ...result.assets])
+            );
+            setDisplayImages(true);
+          }
+        } else {
+          setErrorTitle("Error");
+          setErrorContent(
+            "You've refused to allow this app to access your photos!"
+          );
+          setErrorVisible(true);
+        }
+      });
+    else {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        aspect: [1, 1],
+      });
+      if (!result.canceled) {
+        console.log(result);
+        // setImage(result.assets[0].uri);
+        setImagesAssets(removeDuplicates([...imagesAssets, ...result.assets]));
+        setDisplayImages(true);
+      }
     }
   };
   const removeSelectedImage = (item, toDelete = false) => {
@@ -316,22 +365,21 @@ export default function AddMyApartmentForm({ navigation }) {
     console.log("var = >", idx);
     if (idx != -1) temp.splice(idx, 1);
 
-    setAlertTitle("Note");
-    setAlertContent("Are you sure you want to remove image ?");
-    setIsNote(true);
-    setIsAlertVisible(true);
+    setWarningTitle("Warning");
+    setWarningContent("Are you sure you want to remove image ?");
+    setWarningGoal("removeSelectedImage");
+    setWarningVisible(true);
 
     setToDeleteImage(item);
     if (toDelete) {
       setImagesAssets(temp);
-      // setImagesAssets(imagesAssets);
       if (temp.length == 0) setDisplayImages(false);
     }
   };
   const ListItem = ({ item }) => {
     return (
       <TouchableOpacity
-        onLongPress={() => {
+        onPress={() => {
           removeSelectedImage(item);
         }}
       >
@@ -339,17 +387,12 @@ export default function AddMyApartmentForm({ navigation }) {
           source={{
             uri: item.uri,
           }}
-          style={{ width: 140, height: 140, margin: 2 }}
+          style={{ width: 150, height: 150, margin: 2 }}
           resizeMode="cover"
         />
         {/* <Text style={{}}>Hi</Text> */}
       </TouchableOpacity>
     );
-  };
-  const fixDate = (date, sample = "02/15/23 >> 15/02/2023") => {
-    if (typeof date !== "string") return "UnSet";
-    let temp = date.split("/");
-    return temp[1] + "/" + temp[0] + "/20" + temp[2];
   };
   const getImages = () => {
     pickImage();
@@ -365,7 +408,7 @@ export default function AddMyApartmentForm({ navigation }) {
             style={{
               textAlignVertical: "center",
               marginRight: 10,
-              color: theme.colors.text,
+              color: "black",
             }}
           >
             Get my location
@@ -401,30 +444,79 @@ export default function AddMyApartmentForm({ navigation }) {
             )}
           </MapView>
         </View>
-        <TouchableOpacity
-          onPress={getImages}
-          style={styles.locationAndImagesBoxes}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
         >
-          <Text
-            style={{
-              textAlignVertical: "center",
-              marginRight: 10,
-              color: theme.colors.text,
-            }}
+          <TouchableOpacity
+            onPress={getImages}
+            style={styles.locationAndImagesBoxes}
           >
-            Insert images
-          </Text>
-          <Image
-            source={require("../assets/insertImage.png")}
-            style={{ height: 30, width: 30 }}
-          ></Image>
-        </TouchableOpacity>
-        {displayImages && (
-          <View style={{ width: "100%", height: 150 }}>
+            <Text
+              style={{
+                textAlignVertical: "center",
+                marginRight: 10,
+                color: "black",
+              }}
+            >
+              Insert images
+            </Text>
+            <Image
+              source={require("../assets/insertImage.png")}
+              style={{ height: 30, width: 30 }}
+            ></Image>
+          </TouchableOpacity>
+          {displayImages && (
             <TouchableOpacity
               onPress={() => {
-                setImagesAssets([]);
-                setDisplayImages(false);
+                console.log("pressed");
+                showMessage(TOAST.AddMyApartmentForm);
+              }}
+              style={{
+                alignItems: "center",
+                flex: 0.1,
+                // borderWidth: 2,
+                // borderColor: theme.colors.primaryBorder,
+                // borderRadius: 15,
+                // borderBottomLeftRadius: 15,
+                // backgroundColor: theme.colors.primaryBackground,
+                justifyContent: "center",
+                marginBottom: 10,
+                marginTop: 10,
+              }}
+            >
+              <Image
+                source={require("../assets/help2.png")}
+                style={{
+                  height: 30,
+                  width: 30,
+                  tintColor: theme.colors.primary,
+                }}
+              ></Image>
+            </TouchableOpacity>
+          )}
+        </View>
+        {displayImages && (
+          <View
+            style={{
+              width: "100%",
+              height: 180,
+              borderWidth: 1,
+              borderRadius: 5,
+              borderColor: theme.colors.primary,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                setWarningTitle("Warning");
+                setWarningContent(
+                  "Are tou sure you want to remove all images ?"
+                );
+                setWarningGoal("clearImages");
+                setWarningVisible(true);
               }}
             >
               <Text
@@ -439,9 +531,10 @@ export default function AddMyApartmentForm({ navigation }) {
               </Text>
             </TouchableOpacity>
             <Text style={{ textAlignVertical: "center", textAlign: "center" }}>
-              Long press on image to remove
+              Press on image to remove it
             </Text>
             <FlatList
+              showsHorizontalScrollIndicator={false}
               nestedScrollEnabled
               horizontal
               data={imagesAssets}
@@ -453,7 +546,7 @@ export default function AddMyApartmentForm({ navigation }) {
     );
   };
   return (
-    <Background>
+    <BackgroundForScroll>
       {/* <BackButton goBack={navigation.goBack} /> */}
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -532,7 +625,7 @@ export default function AddMyApartmentForm({ navigation }) {
               <Text
                 style={{ textAlign: "center", textAlignVertical: "center" }}
               >
-                {fromDate === "" ? "UnSet" : fixDate(fromDate)}
+                {fixDate(fromDate)}
               </Text>
             </TouchableOpacity>
             <View style={{ flex: 0.1 }}></View>
@@ -553,7 +646,7 @@ export default function AddMyApartmentForm({ navigation }) {
               <Text
                 style={{ textAlign: "center", textAlignVertical: "center" }}
               >
-                {toDate === null ? "UnSet" : fixDate(toDate)}
+                {fixDate(toDate)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -592,6 +685,7 @@ export default function AddMyApartmentForm({ navigation }) {
               Cancel
             </Text>
           </TouchableOpacity>
+          <View style={{ flex: 0.1 }}></View>
           <TouchableOpacity
             style={[
               styles.profilePressableButtons,
@@ -688,7 +782,37 @@ export default function AddMyApartmentForm({ navigation }) {
           </View>
         </View>
       </Modal>
-    </Background>
+      <Warning
+        // style={{ zIndex: 1 }}
+        visible={warningVisible}
+        title={warningTitle}
+        content={warningContent}
+        CancelText={"Cancel"}
+        onPressCancel={() => {
+          toCloseError();
+        }}
+        onPressYes={() => {
+          if (warningGoal === "clearImages") {
+            setImagesAssets([]);
+            setDisplayImages(false);
+          }
+          if (warningGoal === "removeSelectedImage") {
+            removeSelectedImage(toDeleteImage, true);
+          }
+          toCloseError();
+        }}
+      ></Warning>
+      <Error
+        visible={errorVisible}
+        title={errorTitle}
+        content={errorContent}
+        onPress={() => {
+          toCloseError();
+        }}
+      />
+      <Processing visible={isProcessing} content={"Loading..."}></Processing>
+      <FlashMessage position="bottom" floating={true} />
+    </BackgroundForScroll>
   );
 }
 const styles = StyleSheet.create({
@@ -711,8 +835,8 @@ const styles = StyleSheet.create({
   },
   profilePressableButtons: {
     // borderWidth: 2,
-    display: "flex",
-    margin: 5,
+    // display: "flex",
+    // margin: 5,
     flex: 1,
     borderRadius: 5,
     backgroundColor: "#fd0000",
@@ -726,23 +850,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     borderRadius: 5,
-    justifyContent: "center",
     height: 50,
-    justifyContent: "flex-end",
-    margin: 5,
+    justifyContent: "space-between",
+    // margin: 5,
     // position: "absolute",
     // bottom: 0,
     // backgroundColor: "#fd0000",
   },
   ScrollView1: {
-    marginTop: 30,
     height: "100%",
     width: "100%",
     // zIndex: 2,
   },
   locationAndImagesBoxes: {
     flexDirection: "row",
-    width: "100%",
+    flex: 1,
     borderWidth: 2,
     borderColor: theme.colors.primaryBorder,
     borderTopRightRadius: 15,

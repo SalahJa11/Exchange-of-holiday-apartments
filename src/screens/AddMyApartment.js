@@ -14,6 +14,7 @@ import {
   Alert,
   FlatList,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import { theme } from "../core/theme";
 import Error from "../components/Error";
@@ -27,11 +28,12 @@ import {
   listApartment,
   removeApartment,
 } from "../config/cloud";
+import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
 
 export default function AddMyApartment({ navigation }) {
   // const navigation = useNavigation();
   const isFocused = useIsFocused();
-
+  const [apartmentsTemp, setApartmentsTemp] = useState([]);
   const [apartments, setApartments] = useState([
     // {
     //   balcony: false,
@@ -54,12 +56,46 @@ export default function AddMyApartment({ navigation }) {
     //     "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
     // },
   ]);
+  const saveStatus = (apartmentsArray) => {
+    // console.log("apartmentsArrayLength = ", apartmentsArray.length, apartmentsArray);
+    const dateTemp = new Date().setHours(0, 0, 0, 0);
+    const res = apartmentsArray.map((element) => {
+      let newElement = { ...element };
+      if (element.booked) {
+        newElement.status = "Booked";
+        console.log("Booked");
+      } else if (
+        new Date(googleDateToJavaDate(element.ToDate)).setHours(0, 0, 0, 0) <
+        dateTemp
+      ) {
+        newElement.status = "Expired";
+        console.log("Expired");
+      } else if (element.Listed) {
+        newElement.status = "Listed";
+        console.log("Listed");
+      } else {
+        newElement.status = "Not Listed";
+        console.log("Not Listed");
+      }
+      console.log("i");
+      return newElement;
+    });
+    // console.log(res);
+    return res;
+  };
   async function fetchData() {
     setIsProcessing(true);
     try {
       const res = await getMyApartments();
       console.log("new res = ", res);
-      setApartments([...res]);
+      let temp = [...res];
+      temp = saveStatus(temp);
+      temp.sort(function (x, y) {
+        return x.createdAt - y.createdAt;
+      });
+      temp = temp.reverse();
+      setApartments([...temp]);
+      setApartmentsTemp([...temp]);
       // console.log("new apartments = ", apartments);
       // console.log("apartmentId = ", apartments[0].apartmentId);
     } catch (error) {
@@ -78,6 +114,7 @@ export default function AddMyApartment({ navigation }) {
 
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const [index, setIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
@@ -106,26 +143,6 @@ export default function AddMyApartment({ navigation }) {
   //   setName(apartments[index].Name);
   //   setDescription(apartments[index].Description);
   // };
-  const googleDateToJavaDate = (
-    timestamp = { nanoseconds: 0, seconds: 1676563345 }
-  ) => {
-    console.log(
-      "timestamp = ",
-      timestamp,
-      " fromDate",
-      apartments[index].FromDate
-    );
-    // return "";
-    // timestamp = { nanoseconds: 809000000, seconds: 1676563345 };
-    return new Date(
-      timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-    ).toLocaleDateString("en-US");
-  };
-  const fixDate = (date, sample = "02/15/23 >> 15/02/2023") => {
-    if (typeof date !== "string") return "non";
-    let temp = date.split("/");
-    return temp[1] + "/" + temp[0] + "/20" + temp[2];
-  };
 
   const wait = (timeout) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -215,7 +232,13 @@ export default function AddMyApartment({ navigation }) {
   };
   const ApartmentInfo = () => {
     return (
-      <View>
+      <View
+        style={{
+          justifyContent: "space-between",
+          height: "100%",
+          width: "100%",
+        }}
+      >
         <View>
           <Text
             style={{ fontSize: 20, textAlign: "center", fontWeight: "bold" }}
@@ -260,13 +283,6 @@ export default function AddMyApartment({ navigation }) {
               </Text>
             </View>
           </View>
-          <Text style={{ textAlign: "center" }}>
-            {[
-              googleDateToJavaDate(apartments[index].FromDate),
-              " - ",
-              googleDateToJavaDate(apartments[index].ToDate),
-            ]}
-          </Text>
         </View>
 
         <Text style={{ fontSize: 20, textAlign: "center", fontWeight: "bold" }}>
@@ -293,10 +309,7 @@ export default function AddMyApartment({ navigation }) {
             {apartments[index].Belcony ? "Belcony: exist" : "No belcony"}
           </Text>
           <Text style={styles.ProfileDetails}>
-            Rating:{" "}
-            {apartments[index].denominator == 0
-              ? "0"
-              : apartments[index].numerator / apartments[index].denominator}
+            Rating: {apartments[index].Rating}
           </Text>
         </View>
         {apartments[index].Description !== "" && (
@@ -450,7 +463,7 @@ export default function AddMyApartment({ navigation }) {
           style={{
             width: "100%",
             aspectRatio: 1,
-            marginTop: 18,
+            marginVertical: 8,
           }}
         >
           <Image
@@ -459,8 +472,8 @@ export default function AddMyApartment({ navigation }) {
               aspectRatio: 1,
               borderTopRightRadius: 20,
               borderTopLeftRadius: 20,
-              borderBottomLeftRadius: 5,
-              borderBottomRightRadius: 5,
+              borderBottomLeftRadius: 20,
+              borderBottomRightRadius: 20,
               resizeMode: "cover",
             }}
             source={{ uri: element.Image }}
@@ -468,14 +481,16 @@ export default function AddMyApartment({ navigation }) {
           {element.Name && (
             <View
               style={{
-                backgroundColor: "white",
+                backgroundColor: "black",
                 opacity: 0.75,
                 width: "100%",
                 position: "relative",
                 bottom: 50,
-                paddingLeft: 5,
-                paddingRight: 5,
+                paddingLeft: 10,
+                paddingRight: 10,
                 flexDirection: "row",
+                borderBottomLeftRadius: 20,
+                borderBottomRightRadius: 20,
               }}
             >
               <Text
@@ -484,9 +499,11 @@ export default function AddMyApartment({ navigation }) {
                   height: 50,
                   fontSize: 20,
                   textAlignVertical: "center",
+                  color: "white",
+                  fontWeight: "bold",
                 }}
               >
-                {element.Name}
+                {element.Name.slice(0, 30)}
               </Text>
               <Text
                 style={{
@@ -494,22 +511,16 @@ export default function AddMyApartment({ navigation }) {
                   height: 50,
                   fontSize: 15,
                   borderLeftWidth: 3,
+                  borderColor: "white",
                   textAlign: "center",
                   textAlignVertical: "center",
-                  color: "black",
+                  color: "white",
                 }}
               >
                 {"Rating "}
-                {element.denominator === 0
-                  ? "0"
-                  : element.numerator / element.denominator}
+                {element.Rating}
                 {"\n"}
-                {new Date(googleDateToJavaDate(element.ToDate)).getTime() <
-                new Date().setHours(0, 0, 0, 0)
-                  ? "Expired"
-                  : element.Listed
-                  ? "Listed"
-                  : "Not listed"}
+                {element.status}
               </Text>
             </View>
           )}
@@ -518,10 +529,37 @@ export default function AddMyApartment({ navigation }) {
     });
     return result;
   };
+  const searchFilterFunction = (text) => {
+    // Check if searched text is not blank
+    if (text) {
+      // Inserted text is not blank
+      // Filter the masterDataSource and update FilteredDataSource
+      const newData = apartmentsTemp.filter(function (item) {
+        // Applying filter for the inserted text in search bar
+        const itemData = item.Name ? item.Name.toUpperCase() : "".toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setApartments(newData);
+      setSearch(text);
+    } else {
+      // Inserted text is blank
+      // Update FilteredDataSource with masterDataSource
+      setApartments(apartmentsTemp);
+      setSearch(text);
+    }
+  };
   return (
     <Background style={{ marginTop: 15 }}>
       {/* <BackButton goBack={navigation.goBack} /> */}
-      <Modal animationType="slide" transparent={true} visible={modalVisible}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <ScrollView
@@ -541,7 +579,7 @@ export default function AddMyApartment({ navigation }) {
       >
         <Text
           style={{
-            fontSize: 35,
+            fontSize: 40,
             color: "white",
             textAlign: "center",
             textAlignVertical: "center",
@@ -550,6 +588,13 @@ export default function AddMyApartment({ navigation }) {
           +
         </Text>
       </TouchableOpacity>
+      <TextInput
+        style={styles.textInputStyle}
+        onChangeText={(text) => searchFilterFunction(text)}
+        value={search}
+        underlineColorAndroid="transparent"
+        placeholder="Search (by name) Here"
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.ScrollView1}
@@ -611,6 +656,16 @@ export default function AddMyApartment({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  textInputStyle: {
+    width: "100%",
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 5,
+    borderColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    margin: 5,
+    backgroundColor: "white",
+  },
   ScrollView1: {
     height: "100%",
     width: "100%",
@@ -682,7 +737,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "green",
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
     right: 30,
@@ -693,7 +748,7 @@ const styles = StyleSheet.create({
     margin: 20,
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
+    padding: 20,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {

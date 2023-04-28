@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  TextInput,
 } from "react-native";
 import Processing from "../components/Processing";
 import {
@@ -19,16 +20,22 @@ import {
   getValidApartmentById,
   removeABooking,
 } from "../config/cloud";
-import TextInput from "../components/TextInput";
 import { theme } from "../core/theme";
 import Note from "../components/Note";
 import Warning from "../components/Warning";
 import Error from "../components/Error";
 import { Checkbox } from "react-native-paper";
+import FlashMessage, { showMessage } from "react-native-flash-message";
+
+import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
+import { TOAST } from "../core/TOASTText";
 export default function MyBookings({ navigation }) {
+  const [search, setSearch] = useState("");
+
   const [showCancelled, setShowCancelled] = useState(true);
   const [showExpired, setShowExpired] = useState(true);
   const [showConfirmed, setShowConfirmed] = useState(true);
+  const [showDoneConfirmed, setShowDoneConfirmed] = useState(true);
   const [showResponse, setShowResponse] = useState(true);
   const [showMyResponse, setShowMyResponse] = useState(true);
   const [showMySuggestments, setShowMySuggestments] = useState(true);
@@ -157,6 +164,10 @@ export default function MyBookings({ navigation }) {
       temp = saveStatus(temp);
       console.log("setting booking =>", temp);
       // temp = applyFilter(temp);
+      temp.sort(function (x, y) {
+        return x.createdAt - y.createdAt;
+      });
+      temp = temp.reverse();
       setBookings([...temp]);
       setBookingsTemp([...temp]);
     } catch (error) {
@@ -246,16 +257,219 @@ export default function MyBookings({ navigation }) {
     setIsProcessing(false);
     fetchData();
   };
+  const filterWindow = () => {
+    return (
+      <Modal animationType="slide" transparent={true} visible={filterVisible}>
+        <View style={styles.modalView}>
+          <View style={{ width: "100%" }}>
+            <View style={{ justifyContent: "space-around" }}>
+              <View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show expired bookings
+                  </Text>
+                  <Checkbox
+                    status={showExpired ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowExpired(!showExpired);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show Cancelled bookings
+                  </Text>
+                  <Checkbox
+                    status={showCancelled ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowCancelled(!showCancelled);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show confirmed bookings
+                  </Text>
+                  <Checkbox
+                    status={showConfirmed ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowConfirmed(!showConfirmed);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show confirmed and done bookings
+                  </Text>
+                  <Checkbox
+                    status={showDoneConfirmed ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowDoneConfirmed(!showDoneConfirmed);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show booking waiting my response
+                  </Text>
+                  <Checkbox
+                    status={showMyResponse ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowMyResponse(!showMyResponse);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show booking waiting owner response
+                  </Text>
+                  <Checkbox
+                    status={showResponse ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowResponse(!showResponse);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show my suggestments bookings
+                  </Text>
+                  <Checkbox
+                    status={showMySuggestments ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowMySuggestments(!showMySuggestments);
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={styles.filterBoxTitle}>
+                    Show people suggestment bookings
+                  </Text>
+                  <Checkbox
+                    status={showSuggestments ? "checked" : "unchecked"}
+                    onPress={() => {
+                      setShowSuggestments(!showSuggestments);
+                    }}
+                  />
+                </View>
+              </View>
+              <View style={{ width: "100%", height: 50, flexDirection: "row" }}>
+                <TouchableOpacity
+                  style={[
+                    styles.profilePressableButtons,
+                    styles.profilePressableButtons2,
+                  ]}
+                  onPress={() => {
+                    setBookings(applyFilter([...bookingsTemp]));
+                  }}
+                >
+                  <Text
+                    style={{
+                      alignSelf: "center",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "white",
+                    }}
+                  >
+                    Update result
+                  </Text>
+                </TouchableOpacity>
+                <View style={{ flex: 0.1 }} />
+                <TouchableOpacity
+                  style={styles.profilePressableButtons}
+                  onPress={() => setFilterVisible(false)}
+                >
+                  <Text
+                    style={{
+                      alignSelf: "center",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "white",
+                    }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+          <View>
+            <View
+              style={{
+                flexDirection: "row",
+                // flex: 1,
+                // // position: "absolute",
+                // bottom: 20,
+              }}
+            >
+              <TouchableOpacity
+                style={styles.CloseModal}
+                onPress={() => setFilterVisible(false)}
+              >
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
   const applyFilter = (bookingsArray) => {
     let res = bookingsArray.map((element) => {
       let newElement = { ...element };
       if (showCancelled && newElement.status == "Cancelled") return newElement;
       if (showExpired && newElement.status == "Expired") return newElement;
-      if (
-        showConfirmed &&
-        (newElement.status == "Confirmed" ||
-          newElement.status == "Confirmed and done")
-      )
+      if (showConfirmed && newElement.status == "Confirmed") return newElement;
+      if (showDoneConfirmed && newElement.status == "Confirmed and done")
         return newElement;
       if (showMyResponse && newElement.status == "Waiting for my response")
         return newElement;
@@ -277,8 +491,13 @@ export default function MyBookings({ navigation }) {
         return !item.mine;
       });
     }
-    console.log("returning ", [...temp1, temp2], temp1, temp2);
-    return [...temp1, ...temp2];
+    // console.log("returning ", [...temp1, temp2], temp1, temp2);
+    let finalRes = [...temp1, ...temp2];
+    finalRes.sort(function (x, y) {
+      return x.createdAt - y.createdAt;
+    });
+    finalRes = finalRes.reverse();
+    return finalRes;
   };
   const splitStatus = (bookingsArray) => {
     const res = bookingsArray.map((element) => {
@@ -339,192 +558,6 @@ export default function MyBookings({ navigation }) {
     return res;
   };
 
-  const filterWindow = () => {
-    return (
-      // <Modal visible={isModalVisible}>
-      <View style={{ width: "100%" }}>
-        <TouchableOpacity
-          onPress={() => setFilterVisible(!filterVisible)}
-          style={{
-            width: "100%",
-            flexDirection: "row",
-          }}
-        >
-          <Text style={{ flex: 3 }}>Filter</Text>
-          <Image
-            source={require("../assets/filter.png")}
-            style={{ height: 30, width: 30 }}
-          ></Image>
-        </TouchableOpacity>
-        {filterVisible && (
-          <View style={{ justifyContent: "space-around" }}>
-            <View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show expired bookings
-                </Text>
-                <Checkbox
-                  status={showExpired ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowExpired(!showExpired);
-                  }}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show Cancelled bookings
-                </Text>
-                <Checkbox
-                  status={showCancelled ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowCancelled(!showCancelled);
-                  }}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show confirmed bookings
-                </Text>
-                <Checkbox
-                  status={showConfirmed ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowConfirmed(!showConfirmed);
-                  }}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show booking waiting my response
-                </Text>
-                <Checkbox
-                  status={showMyResponse ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowMyResponse(!showMyResponse);
-                  }}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show booking waiting owner response
-                </Text>
-                <Checkbox
-                  status={showResponse ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowResponse(!showResponse);
-                  }}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show my suggestments bookings
-                </Text>
-                <Checkbox
-                  status={showMySuggestments ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowMySuggestments(!showMySuggestments);
-                  }}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ textAlignVertical: "center" }}>
-                  Show people suggestment bookings
-                </Text>
-                <Checkbox
-                  status={showSuggestments ? "checked" : "unchecked"}
-                  onPress={() => {
-                    setShowSuggestments(!showSuggestments);
-                  }}
-                />
-              </View>
-            </View>
-            <View style={{ width: "100%", height: 50 }}>
-              <TouchableOpacity
-                style={[
-                  styles.profilePressableButtons,
-                  styles.profilePressableButtons2,
-                ]}
-                onPress={() => {
-                  setBookings(applyFilter([...bookingsTemp]));
-                }}
-              >
-                <Text
-                  style={{
-                    alignSelf: "center",
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    color: "white",
-                  }}
-                >
-                  Update result
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={{
-                borderWidth: 1,
-                borderColor: "gray",
-                backgroundColor: "white",
-                borderRadius: 20,
-                height: 40,
-                width: 40,
-                alignItems: "center",
-                alignSelf: "center",
-                justifyContent: "center",
-              }}
-              onPress={() => {
-                setFilterVisible(false);
-              }}
-            >
-              <Image
-                source={require("../assets/downArrow.png")}
-                style={{
-                  height: 40,
-                  width: 40,
-                  alignItems: "center",
-                  transform: [{ rotate: "180deg" }],
-                }}
-              ></Image>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    );
-  };
   function oneBookingSide(id = 1) {
     // let mine = <View></View>;
     if (id == 1) {
@@ -710,21 +743,6 @@ export default function MyBookings({ navigation }) {
       );
     // return mine;
   }
-  const googleDateToJavaDate = (
-    timestamp = { nanoseconds: 0, seconds: 1676563345 }
-  ) => {
-    // console.log("timestamp = ", timestamp, " fromDate", apartment.FromDate);
-    // return "";
-    // timestamp = { nanoseconds: 809000000, seconds: 1676563345 };
-    return new Date(
-      timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-    ).toLocaleDateString("en-US");
-  };
-  const fixDate = (date, sample = "02/15/23 >> 15/02/2023") => {
-    if (typeof date !== "string") return "non";
-    let temp = date.split("/");
-    return temp[1] + "/" + temp[0] + "/20" + temp[2];
-  };
   const bookingDetails = () => {
     let temp = new Date().setHours(0, 0, 0, 0);
     let toLetConfirm =
@@ -794,10 +812,16 @@ export default function MyBookings({ navigation }) {
         </View>
         {toLetConfirm && myId == bookings[index]._id2 && (
           <TouchableOpacity
-            style={[
-              styles.profilePressableButtons,
-              styles.profilePressableButtons2,
-            ]}
+            style={{
+              display: "flex",
+              marginTop: 5,
+              marginHorizontal: 5,
+              flex: 1,
+              borderRadius: 5,
+              backgroundColor: theme.colors.primary,
+              height: 40,
+              justifyContent: "center",
+            }}
             onPress={() => {
               setModalVisible(false);
               setWarningContent("Are you sure ?");
@@ -852,7 +876,7 @@ export default function MyBookings({ navigation }) {
               }
             />
 
-            <Text style={{ color: "white", fontSize: 24 }}>
+            <Text style={{ color: "black", fontSize: 24 }}>
               {profile2.name}
             </Text>
           </TouchableOpacity>
@@ -860,27 +884,30 @@ export default function MyBookings({ navigation }) {
         {bookingDetails()}
         <View style={styles.profilePressableButtonsView}>
           {!bookings[index].confirmed && (
-            <TouchableOpacity
-              style={styles.profilePressableButtons}
-              onPress={() => {
-                setModalVisible(false);
-                setWarningContent("Are you sure ?");
-                setWarningTitle("Warning");
-                setWarningGoal("cancelAndRemove");
-                setWarningVisible(true);
-              }}
-            >
-              <Text
-                style={{
-                  alignSelf: "center",
-                  fontSize: 20,
-                  fontWeight: "bold",
-                  color: "white",
+            <>
+              <TouchableOpacity
+                style={styles.profilePressableButtons}
+                onPress={() => {
+                  setModalVisible(false);
+                  setWarningContent("Are you sure ?");
+                  setWarningTitle("Warning");
+                  setWarningGoal("cancelAndRemove");
+                  setWarningVisible(true);
                 }}
               >
-                Cancel and remove request
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Cancel & remove
+                </Text>
+              </TouchableOpacity>
+              <View style={{ flex: 0.1 }}></View>
+            </>
           )}
           <TouchableOpacity
             style={[
@@ -903,41 +930,64 @@ export default function MyBookings({ navigation }) {
             </Text>
           </TouchableOpacity>
           {bookings[index].status == "Confirmed and done" && (
-            <TouchableOpacity
-              style={[
-                styles.profilePressableButtons,
-                styles.profilePressableButtons2,
-              ]}
-              onPress={() => {
-                setModalVisible(false);
+            <>
+              <View style={{ flex: 0.1 }}></View>
+              <TouchableOpacity
+                style={[
+                  styles.profilePressableButtons,
+                  styles.profilePressableButtons2,
+                ]}
+                onPress={() => {
+                  setModalVisible(false);
 
-                navigation.navigate("Rating", {
-                  paramKeyProfile: profile2,
-                  paramKeyAparment:
-                    myId == bookings[index]._id1
-                      ? apartment2
-                      : bookings[index].byMoney
-                      ? ""
-                      : apartment1,
-                });
-              }}
-            >
-              <Text
-                style={{
-                  alignSelf: "center",
-                  fontSize: 20,
-                  fontWeight: "bold",
-                  color: "white",
+                  navigation.navigate("Rating", {
+                    paramKeyProfile: profile2,
+                    paramKeyAparment:
+                      myId == bookings[index]._id1
+                        ? apartment2
+                        : bookings[index].byMoney
+                        ? ""
+                        : apartment1,
+                  });
                 }}
               >
-                Rate
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Rate
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </View>
     );
   };
+  // const searchFilterFunction = (text) => {
+  //   // Check if searched text is not blank
+  //   if (text) {
+  //     // Inserted text is not blank
+  //     // Filter the masterDataSource and update FilteredDataSource
+  //     const newData = bookingsTemp.filter(function (item) {
+  //       // Applying filter for the inserted text in search bar
+  //       const itemData = item.name ? item.name.toUpperCase() : "".toUpperCase();
+  //       const textData = text.toUpperCase();
+  //       return itemData.indexOf(textData) > -1;
+  //     });
+  //     setChats(newData);
+  //     setSearch(text);
+  //   } else {
+  //     // Inserted text is blank
+  //     // Update FilteredDataSource with masterDataSource
+  //     setChats(tempChats);
+  //     setSearch(text);
+  //   }
+  // };
   const everyBookingCard = () => {
     let res = [];
     bookings.forEach((element, index) => {
@@ -980,7 +1030,7 @@ export default function MyBookings({ navigation }) {
             borderColor: color,
             backgroundColor: color2,
           }}
-          onLongPress={() => {
+          onPress={() => {
             setIndex(index);
             // setModalVisible(true);
             fetchBookingData(index).then(() => {
@@ -1040,9 +1090,17 @@ export default function MyBookings({ navigation }) {
 
             <View style={{ height: 150, width: "40%" }}>
               {element.byMoney == true && (
-                <View>
-                  <Text>Money Amount</Text>
-                  <Text>{element.Money}</Text>
+                <View
+                  style={{
+                    alignItems: "center",
+                    height: "100%",
+                    justifyContent: "space-around",
+                  }}
+                >
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={{ fontWeight: "bold" }}>Money Amount</Text>
+                    <Text style={{ fontWeight: "bold" }}>{element.Money}</Text>
+                  </View>
                   <Image
                     source={require("../assets/coins.png")}
                     style={{
@@ -1110,7 +1168,14 @@ export default function MyBookings({ navigation }) {
   return (
     <Background innerStyle={{ justifyContent: "space-between" }}>
       {/* <BackButton goBack={navigation.goBack} /> */}
-      <Modal visible={modalVisible} style={{ width: "100%" }}>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        style={{ width: "100%" }}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
         {/* <TouchableOpacity
           // style={{ borderWidth: 20 }}
           style={[styles.ScrollView1, { backgroundColor: "white" }]}
@@ -1125,7 +1190,7 @@ export default function MyBookings({ navigation }) {
             alignSelf: "center",
           }}
         >
-          <View style={styles.modalView}>
+          <View style={{ height: "100%", width: "100%" }}>
             <ScrollView
               contentContainerStyle={{
                 backgroundColor: "white",
@@ -1142,13 +1207,68 @@ export default function MyBookings({ navigation }) {
         {/* </TouchableOpacity> */}
       </Modal>
       {/*start your code here*/}
-      <View>{filterWindow()}</View>
+      {/* <TextInput
+        style={styles.textInputStyle}
+        onChangeText={(text) => searchFilterFunction(text)}
+        value={search}
+        underlineColorAndroid="transparent"
+        placeholder="Search Here"
+      /> */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => setFilterVisible(true)}
+          style={styles.locationAndImagesBoxes}
+        >
+          <Text
+            style={{
+              textAlignVertical: "center",
+              marginRight: 10,
+              color: "black",
+              fontWeight: "bold",
+            }}
+          >
+            Filter
+          </Text>
+          <Image
+            source={require("../assets/filter.png")}
+            style={{ height: 30, width: 30 }}
+          ></Image>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            console.log("pressed");
+            showMessage(TOAST.showBookings);
+          }}
+          style={{
+            alignItems: "center",
+            flex: 0.1,
+            // borderWidth: 2,
+            // borderColor: theme.colors.primaryBorder,
+            // borderRadius: 15,
+            // borderBottomLeftRadius: 15,
+            // backgroundColor: theme.colors.primaryBackground,
+            justifyContent: "center",
+            marginBottom: 1,
+            marginTop: 10,
+          }}
+        >
+          <Image
+            source={require("../assets/help2.png")}
+            style={{ height: 30, width: 30, tintColor: theme.colors.primary }}
+          ></Image>
+        </TouchableOpacity>
+      </View>
       <ScrollView
         contentContainerStyle={{
           width: "100%",
           // borderWidth: 1,
           alignItems: "center",
-          backgroundColor: "white",
           flexGrow: 1,
           justifyContent: "center",
         }}
@@ -1157,6 +1277,7 @@ export default function MyBookings({ navigation }) {
       >
         {everyBookingCard()}
       </ScrollView>
+      {filterWindow()}
       <Error
         visible={errorVisible}
         title={errorTitle}
@@ -1194,13 +1315,46 @@ export default function MyBookings({ navigation }) {
         }}
       ></Warning>
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
+      <FlashMessage position="bottom" floating={true} />
     </Background>
   );
 }
 const styles = StyleSheet.create({
+  locationAndImagesBoxes: {
+    flexDirection: "row",
+    flex: 1,
+    borderWidth: 2,
+    borderColor: theme.colors.primaryBorder,
+    borderTopRightRadius: 15,
+    borderBottomLeftRadius: 15,
+    backgroundColor: theme.colors.primaryBackground,
+    justifyContent: "center",
+    marginBottom: 1,
+    marginTop: 10,
+  },
+  filterBoxTitle: {
+    textAlign: "center",
+    textAlignVertical: "center",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  modalView: {
+    margin: 15,
+    justifyContent: "space-between",
+    // alignItems: "center",
+    // height: "100%",
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    shadowColor: "#000",
+    elevation: 10,
+  },
   header: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
+    marginTop: 2,
+    backgroundColor: theme.colors.primaryBackground,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: theme.colors.primaryBorder,
   },
   headerContent: {
     padding: 30,
@@ -1210,14 +1364,13 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 63,
-    borderWidth: 4,
-    borderColor: "white",
+    borderWidth: 2,
+    borderColor: theme.colors.primaryBorder,
     marginBottom: 10,
   },
   profilePressableButtons: {
     // borderWidth: 2,
     display: "flex",
-    margin: 5,
     flex: 1,
     borderRadius: 5,
     backgroundColor: "#fd0000",
@@ -1230,13 +1383,19 @@ const styles = StyleSheet.create({
   profilePressableButtonsView: {
     flexDirection: "row",
     width: "100%",
-    borderRadius: 5,
     justifyContent: "center",
     height: 50,
     justifyContent: "flex-end",
-    margin: 5,
-    // position: "absolute",
-    // bottom: 0,
-    // backgroundColor: "#fd0000",
+    padding: 5,
   },
+  // textInputStyle: {
+  //   width: "100%",
+  //   height: 50,
+  //   borderWidth: 2,
+  //   borderRadius: 5,
+  //   borderColor: theme.colors.primary,
+  //   paddingHorizontal: 8,
+  //   margin: 5,
+  //   backgroundColor: "white",
+  // },
 });

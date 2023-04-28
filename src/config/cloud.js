@@ -344,6 +344,7 @@ export async function StartABooking(
       _id1ApartmentImage: myApartmentImage,
       FromDate: new Date(fromDate),
       ToDate: new Date(toDate),
+      createdAt: new Date(),
       Money: moneyAmount,
       byMoney: isMoney,
       confirmed: false,
@@ -366,10 +367,9 @@ export function getChatId(otherUserId) {
   const user = auth.currentUser;
   const Id = user.uid;
   let newChatId = "z ";
-  let result = Id.localeCompare(otherUserId);
-  if (result == 0) {
+  if (Id === otherUserId) {
     throw new Error("Can't create a chat with the yourself");
-  } else if (result > 0) newChatId += Id + " " + otherUserId;
+  } else if (Id > otherUserId) newChatId += Id + " " + otherUserId;
   else newChatId += otherUserId + " " + Id;
   return newChatId;
 }
@@ -655,8 +655,7 @@ export async function addANewApartment(
       Belcony: belcony,
       FromDate: new Date(fromDate),
       ToDate: new Date(toDate),
-      // numerator: 0,
-      // denominator: 0,
+      createdAt: new Date(),
       Rating: 0,
       bookingId: "",
       Listed: false,

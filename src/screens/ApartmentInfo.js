@@ -14,6 +14,8 @@ import {
 // import BackButton from "../components/BackButton";
 import { theme } from "../core/theme";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import FlashMessage, { showMessage } from "react-native-flash-message";
+
 import {
   StartABooking,
   getApartmentOwner,
@@ -31,14 +33,17 @@ import Processing from "../components/Processing";
 import Warning from "../components/Warning";
 import Note from "../components/Note";
 import { Avatar } from "react-native-elements";
+import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
+import { TOAST } from "../core/TOASTText";
+import BackgroundForScroll from "../components/BackgroundForScroll";
 
 export default function ApartmentInfo({ navigation, route }) {
   const [money, setMoney] = useState({ value: "", error: "" });
   const [selectedApartment, setSelectedApartment] = useState({
     id: "",
     image: "",
-    fromDate: new Date().toLocaleDateString("en-US"),
-    toDate: new Date().toLocaleDateString("en-US"),
+    fromDate: new Date().getTime(),
+    toDate: new Date().getTime(),
   });
   const [showPicker, setShowPicker] = useState(false);
   const [showPicker2, setShowPicker2] = useState(false);
@@ -101,9 +106,9 @@ export default function ApartmentInfo({ navigation, route }) {
     navigation.setOptions({
       headerRight: () => (
         <View style={{ flexDirection: "row" }}>
-          <Text style={{ textAlignVertical: "center" }}>
+          {/* <Text style={{ textAlignVertical: "center" }}>
             {owner.name.slice(0, 15)}
-          </Text>
+          </Text> */}
           <TouchableOpacity
             style={{ marginRight: 20 }}
             onPress={() => {
@@ -123,17 +128,6 @@ export default function ApartmentInfo({ navigation, route }) {
         </View>
       ),
       title: owner.name.slice(0, 15),
-      // headerRight: () => (
-      //   <TouchableOpacity
-      //     style={{
-      //       borderWidth: 5,
-      //       marginRight: 10,
-      //     }}
-      //     onPress={signOutNow}
-      //   >
-      //     <Text>logout</Text>
-      //   </TouchableOpacity>
-      // ),
     });
   };
 
@@ -166,28 +160,14 @@ export default function ApartmentInfo({ navigation, route }) {
     typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
-  const googleDateToJavaDate = (
-    timestamp = { nanoseconds: 0, seconds: 1676563345 }
-  ) => {
-    // console.log("timestamp = ", timestamp, " fromDate", apartment.FromDate);
-    // return "";
-    // timestamp = { nanoseconds: 809000000, seconds: 1676563345 };
-    return new Date(
-      timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-    ).toLocaleDateString("en-US");
-  };
-  const fixDate = (date, sample = "02/15/23 >> 15/02/2023") => {
-    if (typeof date !== "string") return "non";
-    let temp = date.split("/");
-    return temp[1] + "/" + temp[0] + "/20" + temp[2];
-  };
+
   const handleDateChange = (event, selectedDate) => {
     // console.log("hiThere", selectedDate);
     const currentDate = selectedDate;
     if (showPicker) {
       setSelectedApartment({
         ...selectedApartment,
-        fromDate: new Date(currentDate).toLocaleDateString("en-US"),
+        fromDate: new Date(currentDate).getTime(),
       });
       if (
         new Date(currentDate).getTime() >
@@ -195,15 +175,15 @@ export default function ApartmentInfo({ navigation, route }) {
       ) {
         setSelectedApartment({
           ...selectedApartment,
-          fromDate: new Date(currentDate).toLocaleDateString("en-US"),
-          toDate: new Date(currentDate).toLocaleDateString("en-US"),
+          fromDate: new Date(currentDate).getTime(),
+          toDate: new Date(currentDate).getTime(),
         });
       }
       // console.log("fromDate", fromDate);
     } else if (showPicker2) {
       setSelectedApartment({
         ...selectedApartment,
-        toDate: new Date(currentDate).toLocaleDateString("en-US"),
+        toDate: new Date(currentDate).getTime(),
       });
       // console.log("toDate", toDate);
     }
@@ -474,17 +454,52 @@ export default function ApartmentInfo({ navigation, route }) {
                       latitude: apartment.Location[0],
                       longitude: apartment.Location[1],
                     }}
-                    title={"title"}
-                    description={"description"}
+                    // title={"title"}
+                    // description={"description"}
                   ></Marker>
                 </MapView>
               </View>
             </View>
-            <Text
-              style={{ fontSize: 20, textAlign: "center", fontWeight: "bold" }}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              Images
-            </Text>
+              <Text
+                style={{
+                  fontSize: 20,
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  textAlignVertical: "center",
+                }}
+              >
+                Images
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log("pressed");
+                  showMessage(TOAST.AddMyApartmentForm);
+                }}
+                style={{
+                  alignItems: "center",
+                  flex: 0.1,
+                  justifyContent: "center",
+                  marginBottom: 1,
+                  marginTop: 10,
+                }}
+              >
+                <Image
+                  source={require("../assets/help2.png")}
+                  style={{
+                    height: 30,
+                    width: 30,
+                    tintColor: theme.colors.primary,
+                  }}
+                ></Image>
+              </TouchableOpacity>
+            </View>
             <FlatList
               style={{ width: "100%", aspectRatio: 1 }}
               showsHorizontalScrollIndicator={false}
@@ -558,20 +573,24 @@ export default function ApartmentInfo({ navigation, route }) {
           style={{
             width: "100%",
             height: "100%",
-            justifyContent: "space-between",
+            justifyContent: "space-evenly",
           }}
         >
           <View style={{ flexDirection: "column" }}>
             <View
               style={{
-                // width: "100%",
-                // height: "50%",
                 flexDirection: "row",
-                //   display: "flex",
-                justifyContent: "space-around",
+                justifyContent: "space-between",
               }}
             >
-              <Text style={[styles.writeText, { fontWeight: "bold" }]}>
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  textAlignVertical: "center",
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
                 By Apartment/House
               </Text>
               <RadioButton
@@ -581,8 +600,20 @@ export default function ApartmentInfo({ navigation, route }) {
                 onPress={() => setChecked("apartment")}
               />
             </View>
-            <View style={{ flexDirection: "row" }}>
-              <Text style={[styles.writeText, { fontWeight: "bold" }]}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  textAlignVertical: "center",
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
                 By Cash
               </Text>
               <RadioButton
@@ -593,42 +624,93 @@ export default function ApartmentInfo({ navigation, route }) {
             </View>
           </View>
           {checked == "apartment" && (
-            <View>
-              <FlatList
-                nestedScrollEnabled
-                horizontal
-                data={myApartments}
-                renderItem={({ item }) => <ListMyApatments item={item} />}
-              ></FlatList>
-            </View>
+            <>
+              {myApartments.length != 0 && (
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderWidth: 2,
+                    borderColor: theme.colors.primary,
+                    borderRadius: 5,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      textAlignVertical: "center",
+                      textAlign: "center",
+                      fontSize: 16,
+                    }}
+                  >
+                    My Apartments/Houses
+                  </Text>
+                  <Text>{TOAST.SuggestAnExchange.message}</Text>
+                  <Text>{TOAST.SuggestAnExchange.description}</Text>
+                  <FlatList
+                    nestedScrollEnabled
+                    horizontal
+                    data={myApartments}
+                    renderItem={({ item }) => <ListMyApatments item={item} />}
+                  ></FlatList>
+                </View>
+              )}
+              {myApartments.length == 0 && (
+                <View>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      textAlignVertical: "center",
+                      textAlign: "center",
+                      fontSize: 16,
+                    }}
+                  >
+                    You dont have any apartments
+                  </Text>
+                </View>
+              )}
+            </>
           )}
           <View
             style={{
               width: "100%",
-              height: 150,
+              height: 152,
+              borderRadius: 3,
+              backgroundColor: theme.colors.surface,
+              borderWidth: 2,
+              borderColor: theme.colors.primaryBorder,
               flexDirection: "row",
               justifyContent: "space-between",
-              borderWidth: 1,
+              // borderWidth: 1,
             }}
           >
-            <Image
-              style={{ height: 150, width: "40%" }}
-              source={
-                apartment.Image != ""
-                  ? {
-                      uri: apartment.Image,
-                    }
-                  : require("../assets/image.png")
-              }
-              resizeMode="contain"
-            />
+            <View
+              style={{
+                height: "100%",
+                width: "40%",
+                // borderWidth: 1,
+                // borderColor: theme.colors.primaryBorder,
+              }}
+            >
+              <Image
+                style={{ height: "100%", width: "100%" }}
+                source={
+                  apartment.Image != ""
+                    ? {
+                        uri: apartment.Image,
+                      }
+                    : require("../assets/image.png")
+                }
+                resizeMode="contain"
+              />
+            </View>
+
             <Image
               style={{ height: 150, width: "10%" }}
               source={require("../assets/exchangeArrows.png")}
               resizeMode="contain"
             />
 
-            <View style={{ height: 150, width: "40%" }}>
+            <View style={{ height: "100%", width: "40%" }}>
               {checked === "cash" && (
                 <View>
                   <TextInput
@@ -694,9 +776,7 @@ export default function ApartmentInfo({ navigation, route }) {
                 <Text
                   style={{ textAlign: "center", textAlignVertical: "center" }}
                 >
-                  {selectedApartment.fromDate === ""
-                    ? "UnSet"
-                    : fixDate(selectedApartment.fromDate)}
+                  {fixDate(selectedApartment.fromDate)}
                 </Text>
               </TouchableOpacity>
               <View style={{ flex: 0.1 }}></View>
@@ -717,9 +797,7 @@ export default function ApartmentInfo({ navigation, route }) {
                 <Text
                   style={{ textAlign: "center", textAlignVertical: "center" }}
                 >
-                  {selectedApartment.toDate === null
-                    ? "UnSet"
-                    : fixDate(selectedApartment.toDate)}
+                  {fixDate(selectedApartment.toDate)}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -786,53 +864,9 @@ export default function ApartmentInfo({ navigation, route }) {
   };
   return (
     <Background>
-      <Modal visible={modalVisible} style={{ width: "100%" }}>
-        {/* <TouchableOpacity
-          // style={{ borderWidth: 20 }}
-          style={[styles.ScrollView1, { backgroundColor: "white" }]}
-          onPress={() => setModalVisible(false)}
-        > */}
-        <View style={{ width: "100%", borderWidth: 1, alignContent: "center" }}>
-          <View style={styles.modalView}>
-            <ScrollView
-              contentContainerStyle={{
-                backgroundColor: "white",
-                flexGrow: 1,
-                justifyContent: "center",
-              }}
-              showsVerticalScrollIndicator={false}
-              style={styles.ScrollView1}
-            >
-              {exchangeModal()}
-            </ScrollView>
-          </View>
-        </View>
-        {/* </TouchableOpacity> */}
-      </Modal>
-      {/* <BackButton goBack={navigation.goBack} /> */}
-      {/* <TouchableOpacity
-        style={styles.profileIconContainer}
-        onPress={() => {
-          navigation.navigate("OwnerDetails", {
-            paramKey: owner,
-          });
-        }}
-      >
-        <Image
-          style={styles.profileIcon}
-          source={
-            owner.image == ""
-              ? require("../assets/profile.png")
-              : { uri: owner.image }
-          }
-        />
-
-        <Text style={{ textAlign: "center" }}>{owner.name.slice(0, 20)}</Text>
-      </TouchableOpacity> */}
       <ScrollView
         contentContainerStyle={{
-          backgroundColor: "white",
-          flexGrow: 1,
+          // flexGrow: 1,
           justifyContent: "center",
         }}
         showsVerticalScrollIndicator={false}
@@ -840,6 +874,33 @@ export default function ApartmentInfo({ navigation, route }) {
       >
         {ApartmentInfo()}
       </ScrollView>
+      <Modal
+        visible={modalVisible}
+        // style={{ width: "100%" }}
+        animationType="slide"
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <BackgroundForScroll>
+          <View style={styles.modalView}>
+            <ScrollView
+              contentContainerStyle={{
+                // borderWidth: 3,
+                // backgroundColor: "white",
+                flexGrow: 1,
+                justifyContent: "space-evenly",
+              }}
+              showsVerticalScrollIndicator={false}
+              style={styles.ScrollView1}
+            >
+              {exchangeModal()}
+            </ScrollView>
+          </View>
+        </BackgroundForScroll>
+        {/* </TouchableOpacity> */}
+      </Modal>
+
       {/*start your code here*/}
       {/* <Text>its {JSON.stringify(apartment)} page start your code here</Text> */}
       <Error
@@ -880,6 +941,7 @@ export default function ApartmentInfo({ navigation, route }) {
         }}
       ></Warning>
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
+      <FlashMessage position="bottom" floating={true} />
     </Background>
   );
 }
@@ -910,32 +972,29 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: "center",
   },
-  profilePressableButtons: {
-    display: "flex",
-    margin: 5,
-    flex: 1,
-    borderRadius: 5,
-    backgroundColor: "#fd0000",
-    height: 30,
-    justifyContent: "center",
-  },
+  // profilePressableButtons: {
+  //   display: "flex",
+  //   margin: 5,
+  //   flex: 1,
+  //   borderRadius: 5,
+  //   backgroundColor: "#fd0000",
+  //   height: 30,
+  //   justifyContent: "center",
+  // },
   ScrollView1: {
     height: "100%",
     width: "100%",
   },
   modalView: {
-    alignSelf: "center",
     margin: 20,
+    justifyContent: "space-between",
+    // alignItems: "center",
+    // height: "100%",
+    padding: 20,
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 10,
-    alignItems: "center",
     shadowColor: "#000",
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    width: "100%",
+    elevation: 10,
   },
   profilePressableButtons: {
     // borderWidth: 2,
@@ -957,7 +1016,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 50,
     justifyContent: "flex-end",
-    margin: 5,
+    marginBottom: 5,
     // position: "absolute",
     // bottom: 0,
     // backgroundColor: "#fd0000",

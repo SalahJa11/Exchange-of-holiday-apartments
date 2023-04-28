@@ -24,6 +24,7 @@ import { Checkbox } from "react-native-paper";
 import { numberValidator } from "../helpers/numberValidator";
 import { editApartment } from "../config/cloud";
 import Processing from "../components/Processing";
+import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
 export default function EditApartment({ navigation, route }) {
   const wait = (timeout) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -50,19 +51,11 @@ export default function EditApartment({ navigation, route }) {
   const [kitchens, setKitchens] = useState({ value: "", error: "" });
   const [description, setDescription] = useState("");
   const [name, setName] = useState("");
-  const [fromDate, setFromDate] = useState("01/01/01");
-  const [toDate, setToDate] = useState("01/01/01");
+  const [fromDate, setFromDate] = useState(new Date().getTime());
+  const [toDate, setToDate] = useState(new Date().getTime());
 
   const [checked, setChecked] = useState(false);
 
-  const googleDateToJavaDate = (
-    timestamp = { nanoseconds: 0, seconds: 1676563345 }
-  ) => {
-    console.log("timestamp = ", timestamp);
-    return new Date(
-      timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-    ).toLocaleDateString("en-US");
-  };
   const resetValues = () => {
     setRooms({ value: apartment.Rooms, error: "" });
     setBathrooms({ value: apartment.Bathrooms, error: "" });
@@ -87,11 +80,12 @@ export default function EditApartment({ navigation, route }) {
   const [noteContent, setNoteContent] = useState("Done");
   const [warningVisible, setWarningVisible] = useState(false);
   const [warningTitle, setWarningTitle] = useState("Warning");
+  const [warningContent, setWarningContent] = useState("Are you sure?");
   const [warningVisible2, setWarningVisible2] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [warningTitle2, setWarningTitle2] = useState("Note");
-  const [warningContent, setWarningContent] = useState("Are you sure?");
+
   const [warningContent2, setWarningContent2] = useState(
     "Set as main image or delete image"
   );
@@ -163,26 +157,17 @@ export default function EditApartment({ navigation, route }) {
     }, []);
   });
   const handleDateChange = (event, selectedDate) => {
-    // console.log("hiThere", selectedDate);
     const currentDate = selectedDate;
     if (showPicker) {
-      setFromDate(new Date(currentDate).toLocaleDateString("en-US"));
+      setFromDate(new Date(currentDate).getTime());
       if (new Date(currentDate).getTime() > new Date(toDate).getTime()) {
-        setToDate(new Date(currentDate).toLocaleDateString("en-US"));
+        setToDate(new Date(currentDate).getTime());
       }
-      console.log("fromDate", fromDate);
     } else if (showPicker2) {
-      setToDate(new Date(currentDate).toLocaleDateString("en-US"));
-      console.log("toDate", toDate);
+      setToDate(new Date(currentDate).getTime());
     }
     setShowPicker(false);
     setShowPicker2(false);
-    console.log(fromDate);
-    console.log(
-      "Selected date: ",
-      currentDate,
-      currentDate.toLocaleDateString("en-US")
-    );
   };
 
   useEffect(() => {
@@ -413,7 +398,7 @@ export default function EditApartment({ navigation, route }) {
             style={{
               textAlignVertical: "center",
               marginRight: 10,
-              color: theme.colors.text,
+              color: "black",
             }}
           >
             Insert images
@@ -457,11 +442,7 @@ export default function EditApartment({ navigation, route }) {
       </View>
     );
   };
-  const fixDate = (date, sample = "02/15/23 >> 15/02/2023") => {
-    if (typeof date !== "string") return "non";
-    let temp = date.split("/");
-    return temp[1] + "/" + temp[0] + "/20" + temp[2];
-  };
+
   const ApartmentEditInfo = () => (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
