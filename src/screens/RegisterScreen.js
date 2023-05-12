@@ -20,18 +20,21 @@ import { passwordValidator } from "../helpers/passwordValidator";
 import { nameValidator } from "../helpers/nameValidator";
 import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
 import { idValidator } from "../helpers/idValidator";
-import { createNewUser, getUserData } from "../config/cloud";
+import { createNewUser, getUserData, signOutUser } from "../config/cloud";
 import Processing from "../components/Processing";
 import BackgroundForScroll from "../components/BackgroundForScroll";
+import { sendEmailVerification } from "firebase/auth";
+import { auth } from "../config/firebase";
+import Note from "../components/Note";
+import Error from "../components/Error";
 
 export default function RegisterScreen({ navigation }) {
-  const wait = (timeout) => {
-    return new Promise((resolve) => setTimeout(resolve, timeout));
-  };
-
-  const [alertTitle, setAlertTitle] = useState("Error");
-  const [alertContent, setAlertContent] = useState("An error occurred");
-  const [isAleretVisible, setIsAlertVisible] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("ErrorTitle");
+  const [errorContent, setErrorContent] = useState("Error");
+  const [noteVisible, setNoteVisible] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("Note");
+  const [noteContent, setNoteContent] = useState("Done");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [name, setName] = useState({ value: "", error: "" });
@@ -39,6 +42,12 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState({ value: "", error: "" });
   const [phoneNumber, setPhoneNumber] = useState({ value: "", error: "" });
   const [id, setId] = useState({ value: "", error: "" });
+
+  const toCloseError = () => {
+    typeof setErrorVisible === "function" ? setErrorVisible(false) : null;
+    typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
+    typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
+  };
 
   const onSignUpPressed = async () => {
     const nameError = nameValidator(name.value);
@@ -78,6 +87,7 @@ export default function RegisterScreen({ navigation }) {
             console.log("sign out function required !");
           } else {
             await sendEmailVerification(auth.currentUser).then(() => {
+              signOutUser();
               setNoteTitle("Note");
               setNoteContent(
                 "Please check your email\n A verification email has been sent to your email"
@@ -89,8 +99,9 @@ export default function RegisterScreen({ navigation }) {
       })
       .catch((error) => {
         setIsProcessing(false);
-        setAlertContent(error.message);
-        setIsAlertVisible(true);
+        setErrorContent(error.message);
+        setErrorTitle("Error");
+        setErrorVisible(true);
       });
   };
   return (
@@ -171,25 +182,23 @@ export default function RegisterScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
-      {/* </KeyboardAvoidingView> */}
-      <Modal visible={isAleretVisible}>
-        <View style={styles.alertContainer}>
-          <View style={styles.alertContentContainer}>
-            <Text style={styles.alertTitleTextStyle}>{alertTitle}</Text>
-
-            <Text style={styles.alertContentText}>{alertContent}</Text>
-
-            <TouchableOpacity
-              style={styles.alertCloseButtonStyle}
-              onPress={() => {
-                setIsAlertVisible(false);
-              }}
-            >
-              <Text style={styles.alertButtonTextStyle}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <Error
+        visible={errorVisible}
+        title={errorTitle}
+        content={errorContent}
+        onPress={() => {
+          toCloseError();
+        }}
+      />
+      <Note
+        visible={noteVisible}
+        title={noteTitle}
+        content={noteContent}
+        onPress={() => {
+          toCloseError();
+          navigation.replace("StartScreen");
+        }}
+      ></Note>
       <Processing visible={isProcessing} content={"Updating..."}></Processing>
     </BackgroundForScroll>
   );
@@ -213,56 +222,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignContent: "space-around",
     flex: 1,
-  },
-  alertContainer: {
-    flexDirection: "column",
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-  },
-
-  alertContentContainer: {
-    width: "70%",
-    backgroundColor: "white",
-    borderColor: "#ff3333",
-    borderWidth: 3,
-    borderRadius: 7,
-    padding: 10,
-  },
-
-  alertTitleTextStyle: {
-    fontSize: 25,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 15,
-    color: "#ff3333",
-  },
-
-  alertContentText: {
-    textAlign: "left",
-    fontSize: 16,
-    marginBottom: 10,
-    color: "#ff3333",
-    paddingRight: 8,
-  },
-
-  alertCloseButtonStyle: {
-    width: "70%",
-    height: 50,
-    backgroundColor: "white",
-    borderColor: "#ff3333",
-    borderWidth: 2,
-    borderRadius: 7,
-    justifyContent: "center",
-    alignItems: "center",
-    alignContent: "center",
-    alignSelf: "center",
-  },
-
-  alertButtonTextStyle: {
-    fontSize: 18,
-    color: "#ff3333",
   },
 });

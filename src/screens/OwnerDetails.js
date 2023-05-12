@@ -204,7 +204,7 @@ export default function OwnerDetails({ navigation, route }) {
     <Background>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "space-evenly" }}
         style={{
           height: "100%",
           width: "100%",

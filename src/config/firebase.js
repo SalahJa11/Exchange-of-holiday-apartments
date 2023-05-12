@@ -10,16 +10,24 @@ import { getStorage, ref } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// const firebaseConfig = {
+//   apiKey: "AIzaSyDFo1-PBex3xKy1SVzu1g3nJdNb8pSAuQc",
+//   authDomain: "exchange-of-holiday-apar-45a07.firebaseapp.com",
+//   projectId: "exchange-of-holiday-apar-45a07",
+//   storageBucket: "exchange-of-holiday-apar-45a07.appspot.com",
+//   messagingSenderId: "1059436044818",
+//   appId: "1:1059436044818:web:037de8d7a36cf4c3adaecb",
+//   measurementId: "G-6VJX1H7YP3",
+// };
 const firebaseConfig = {
-  apiKey: "AIzaSyDFo1-PBex3xKy1SVzu1g3nJdNb8pSAuQc",
-  authDomain: "exchange-of-holiday-apar-45a07.firebaseapp.com",
-  projectId: "exchange-of-holiday-apar-45a07",
-  storageBucket: "exchange-of-holiday-apar-45a07.appspot.com",
-  messagingSenderId: "1059436044818",
-  appId: "1:1059436044818:web:037de8d7a36cf4c3adaecb",
-  measurementId: "G-6VJX1H7YP3",
+  apiKey: "AIzaSyDZMdXebTcGouE25oaiAJfS6JTTx4pKnVs",
+  authDomain: "apartments-exhange.firebaseapp.com",
+  projectId: "apartments-exhange",
+  storageBucket: "apartments-exhange.appspot.com",
+  messagingSenderId: "974023403645",
+  appId: "1:974023403645:web:9c5fc89a68166daf15a914",
+  measurementId: "G-VDVPB6V8Y5",
 };
-
 // Initialize Firebase
 // let app;
 // if (!firebase.apps.length === 0) {

@@ -24,15 +24,15 @@ export default function HomeScreen({ navigation, route }) {
     return new Promise((resolve) => setTimeout(resolve, timeout));
   };
   const [profile, setProfile] = useState({
-    apartments: [],
-    denominator: 0,
-    email: "example@example.example",
-    image: "",
-    isActive: false,
-    name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    numerator: 0,
-    personalID: "",
-    phoneNumber: "",
+    // apartments: [],
+    // denominator: 0,
+    // email: "example@example.example",
+    // image: "",
+    // isActive: false,
+    // name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // numerator: 0,
+    // personalID: "",
+    // phoneNumber: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingText, setProcessingText] = useState("Processing...");
@@ -172,11 +172,7 @@ export default function HomeScreen({ navigation, route }) {
                         setProcessingText("Signing out...");
                         setIsProcessing(true);
 
-                        signOutUser()
-                          .then(() => {
-                            navigation.replace("StartScreen");
-                          })
-                          .catch((error) => alert(error.message));
+                        signOutUser().catch((error) => alert(error.message));
                       });
                     }}
                   >

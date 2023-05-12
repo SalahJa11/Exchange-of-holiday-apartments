@@ -14,15 +14,21 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
-  increment,
   query,
-  orderBy,
   where,
   Timestamp,
   arrayUnion,
   arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
+import { getStorage, refFromURL, deleteObject } from "firebase/storage";
+import {
+  setPersistence,
+  signInWithRedirect,
+  inMemoryPersistence,
+  GoogleAuthProvider,
+} from "firebase/auth";
+
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -32,6 +38,23 @@ import {
   getAuth,
   sendPasswordResetEmail,
 } from "firebase/auth";
+import { googleDateToJavaDate } from "../helpers/DateFunctions";
+export async function RelogIn() {
+  await setPersistence(auth, inMemoryPersistence)
+    .then(() => {
+      const provider = new GoogleAuthProvider();
+      // In memory persistence will be applied to the signed in Google user
+      // even though the persistence was set to 'none' and a page redirect
+      // occurred.
+      return signInWithRedirect(auth, provider);
+    })
+    .catch((error) => {
+      // Handle Errors here.
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      throw new Error(errorMessage);
+    });
+}
 export async function createNewUser(
   userEmail,
   password,
@@ -52,7 +75,8 @@ export async function createNewUser(
       email: userEmail,
       personalID: userPersonalID,
       phoneNumber: phoneNumber,
-      image: "",
+      image:
+        "https://firebasestorage.googleapis.com/v0/b/apartments-exhange.appspot.com/o/images%2Fprofile.png?alt=media&token=416159d6-ec1f-4bfa-8e15-8bf014324b56",
       apartments: [],
       chatsId: [],
       bookings: [],
@@ -61,8 +85,8 @@ export async function createNewUser(
 
     return userID;
   } catch (error) {
-    console.error(error);
-    console.error(error.message);
+    // console.error(error);
+    // console.error(error.message);
     throw new Error(error.message);
   }
 }
@@ -101,7 +125,7 @@ export async function getMyOldApartmentRating(apartmentId) {
     const oldRate = allRatings.find((rate) => rate.id == Id);
     if (oldRate !== undefined) return oldRate.rate;
   } catch (error) {
-    console.error(error.message);
+    throw new Error(error.message);
   }
   return -1;
 }
@@ -177,13 +201,6 @@ export async function rateApartmentAndUser(
     throw new Error(error.message);
   }
 }
-const googleDateToJavaDate = (
-  timestamp = { nanoseconds: 0, seconds: 1676563345 }
-) => {
-  return new Date(
-    timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-  ).toLocaleDateString("en-US");
-};
 export async function confirmABooking(
   bookingId,
   apartment1Id,
@@ -481,7 +498,17 @@ export async function getValidApartmentById(id) {
     if (res.exists()) {
       let result = res.data();
       if (result.booked) {
-        console.log("checking booked apartment");
+        console.log(
+          "checking booked apartment",
+          result.ToDate,
+          googleDateToJavaDate(result.ToDate)
+        );
+        console.log(
+          new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0) <
+            temp,
+          new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0),
+          temp
+        );
         if (
           new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0) <
           temp
@@ -548,15 +575,21 @@ export async function editApartment(
   fromDate,
   toDate,
   listed,
-  belcony
+  belcony,
+  toDeleteImages
 ) {
+  console.log("toDeleteImages", toDeleteImages);
   const user = auth.currentUser;
   const Id = user.uid;
   try {
+    console.log("done-1");
+
     const toDeleteApartment = await getValidApartmentById(apartmentId);
     if (toDeleteApartment.booked) {
       throw new Error("Cant edit booked apartment");
     }
+    console.log("done0");
+
     let time = new Date().getTime();
     if (!(imageAssets.length === 0)) {
       let imagesUri = [];
@@ -592,8 +625,15 @@ export async function editApartment(
       Listed: listed,
     });
     console.log("done4");
+    for (const uri of toDeleteImages) {
+      const imageRef = ref(storage, uri);
+      console.log("imageRef", imageRef);
+      await deleteObject(imageRef).then(() => {
+        console.log("Image deleted successfully");
+      });
+    }
   } catch (error) {
-    console.log(error);
+    throw new Error(error.message);
   }
 }
 export async function listApartment(apartmentId, toList) {
@@ -736,6 +776,9 @@ export async function logIn(email, password) {
     .catch((error) => {
       const errorCode = error.code;
       const errorMessage = error.message;
+      console.log(errorCode, errorMessage);
+      if (errorCode === "auth/user-not-found")
+        throw new Error("Invalid Email or Password");
       throw new Error(error.message);
       // return error;
     });
@@ -758,7 +801,7 @@ export async function signOutUser() {
       return true;
     })
     .catch((error) => {
-      console.error(error);
+      // console.error(error);
       throw Error(error.message);
     });
 }

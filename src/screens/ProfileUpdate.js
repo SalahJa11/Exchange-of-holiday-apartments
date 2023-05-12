@@ -106,6 +106,14 @@ export default function ProfileUpdate({ navigation, route }) {
       })
       .catch((error) => {
         setIsProcessing(false);
+        if (error.code === "auth/too-many-requests") {
+          setErrorTitle("Error");
+          setErrorContent(
+            "A password reset Email already been sent,\nPlease check your email."
+          );
+          setErrorVisible(true);
+        }
+
         setErrorTitle("Error");
         setErrorContent(error.message);
         setErrorVisible(true);

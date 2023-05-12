@@ -319,24 +319,23 @@ export default function AddMyApartmentForm({ navigation }) {
     //   </View>
     // );
   };
-
+  const startPicking = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled) {
+      console.log(result);
+      setImagesAssets(removeDuplicates([...imagesAssets, ...result.assets]));
+      setDisplayImages(true);
+    }
+  };
   const pickImage = async () => {
     if (status.granted === false)
       await requestPermission().then(async (res) => {
         if (res.granted) {
-          let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsMultipleSelection: true,
-            aspect: [1, 1],
-          });
-          if (!result.canceled) {
-            console.log(result);
-            // setImage(result.assets[0].uri);
-            setImagesAssets(
-              removeDuplicates([...imagesAssets, ...result.assets])
-            );
-            setDisplayImages(true);
-          }
+          await startPicking();
         } else {
           setErrorTitle("Error");
           setErrorContent(
@@ -346,17 +345,7 @@ export default function AddMyApartmentForm({ navigation }) {
         }
       });
     else {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        aspect: [1, 1],
-      });
-      if (!result.canceled) {
-        console.log(result);
-        // setImage(result.assets[0].uri);
-        setImagesAssets(removeDuplicates([...imagesAssets, ...result.assets]));
-        setDisplayImages(true);
-      }
+      await startPicking();
     }
   };
   const removeSelectedImage = (item, toDelete = false) => {
@@ -513,7 +502,7 @@ export default function AddMyApartmentForm({ navigation }) {
               onPress={() => {
                 setWarningTitle("Warning");
                 setWarningContent(
-                  "Are tou sure you want to remove all images ?"
+                  "Are you sure you want to remove all images ?"
                 );
                 setWarningGoal("clearImages");
                 setWarningVisible(true);

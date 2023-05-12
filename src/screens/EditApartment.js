@@ -11,11 +11,12 @@ import {
   Image,
   ScrollView,
   RefreshControl,
+  Modal,
 } from "react-native";
 import { TextInput as ReactTextInput } from "react-native";
 import BackButton from "../components/BackButton";
 import TextInput from "../components/TextInput";
-import { theme } from "../core/theme";
+import { Images, theme } from "../core/theme";
 import Note from "../components/Note";
 import Warning from "../components/Warning";
 import Error from "../components/Error";
@@ -25,10 +26,17 @@ import { numberValidator } from "../helpers/numberValidator";
 import { editApartment } from "../config/cloud";
 import Processing from "../components/Processing";
 import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
+import { showMessage } from "react-native-flash-message";
+import { TOAST } from "../core/TOASTText";
 export default function EditApartment({ navigation, route }) {
   const wait = (timeout) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
   };
+  const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState({ uri: "", asset: null });
+  const [databaseImagesToDelete, setDatabaseImagesToDelete] = useState([]);
 
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
@@ -81,14 +89,8 @@ export default function EditApartment({ navigation, route }) {
   const [warningVisible, setWarningVisible] = useState(false);
   const [warningTitle, setWarningTitle] = useState("Warning");
   const [warningContent, setWarningContent] = useState("Are you sure?");
-  const [warningVisible2, setWarningVisible2] = useState(false);
+  const [warningGoal, setWarningGoal] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const [warningTitle2, setWarningTitle2] = useState("Note");
-
-  const [warningContent2, setWarningContent2] = useState(
-    "Set as main image or delete image"
-  );
 
   const handleUpdateApartment = async () => {
     const roomsError = numberValidator(rooms.value);
@@ -132,7 +134,8 @@ export default function EditApartment({ navigation, route }) {
       fromDate,
       toDate,
       apartment.Listed,
-      checked
+      checked,
+      databaseImagesToDelete
     )
       .then(() => {
         setIsProcessing(false);
@@ -184,7 +187,8 @@ export default function EditApartment({ navigation, route }) {
     return (
       <TouchableOpacity
         onLongPress={() => {
-          removeSelectedImage(item);
+          setSelectedImage({ uri: item.uri, asset: item });
+          setIsModalVisible(true);
         }}
       >
         <Image
@@ -202,7 +206,9 @@ export default function EditApartment({ navigation, route }) {
     return (
       <TouchableOpacity
         onLongPress={() => {
-          removeSelectedImageUri(item);
+          setIsModalVisible(true);
+          setSelectedImage({ uri: item, asset: null });
+          // removeSelectedImageUri(item);
         }}
       >
         <Image
@@ -323,41 +329,77 @@ export default function EditApartment({ navigation, route }) {
       </View>
     );
   };
-  const removeSelectedImageUri = (item, toDelete = false) => {
-    let temp = [...imagesUri];
-    var idx = temp.indexOf(item);
-    console.log("var = >", idx);
-    if (idx != -1) temp.splice(idx, 1);
+  // const removeSelectedImageUri = (item, toDelete = false) => {
+  //   let temp = [...imagesUri];
+  //   var idx = temp.indexOf(item);
+  //   console.log("var = >", idx);
+  //   if (idx != -1) temp.splice(idx, 1);
 
-    setWarningTitle("Warning");
-    setWarningContent("Are you sure you want to remove image ?");
-    setOldImage(true);
-    setWarningVisible2(true);
-    console.log(item);
-    setToDeleteImageUri(item);
-    if (toDelete) {
-      setImagesUri(temp);
-    }
+  //   setWarningTitle("Warning");
+  //   setWarningContent("Are you sure you want to remove image ?");
+  //   setOldImage(true);
+  //   setWarningVisible2(true);
+  //   console.log(item);
+  //   setToDeleteImageUri(item);
+  //   if (toDelete) {
+  //     setImagesUri(temp);
+  //   }
+  // };
+  const resetMainImage = (array = imagesUri, array2 = imagesAssets) => {
+    // console.log(
+    //   "imagesUri.length >= 1",
+    //   imagesUri.length >= 1,
+    //   "imagesAssets.length >= 1",
+    //   imagesAssets.length >= 1,
+    //   imagesUri
+    // );
+    if (array.length >= 1) setMainImage(array[0]);
+    else if (array2.length >= 1) setMainImage(array2[0].uri);
+    else setMainImage("");
   };
-  const removeSelectedImage = (item, toDelete = false) => {
+  const deleteImage = () => {
     let temp = [...imagesAssets];
-    var idx = temp.indexOf(item);
+    var idx = temp.indexOf(selectedImage.asset);
     console.log("var = >", idx);
     if (idx != -1) temp.splice(idx, 1);
-
-    setWarningTitle("Warning");
-    setWarningContent("Are you sure you want to remove image ?");
-    setOldImage(false);
-    setWarningVisible2(true);
-
-    setToDeleteImage(item);
-    if (toDelete) {
-      setImagesAssets(temp);
-      // setImagesAssets(imagesAssets);
-      if (temp.length == 0) setDisplayImages(false);
+    setImagesAssets(temp);
+    if (temp.length == 0) setDisplayImages(false);
+    let temp2 = [...imagesUri];
+    var idx = temp2.indexOf(selectedImage.uri);
+    console.log("var = >", idx);
+    if (idx != -1) {
+      temp2.splice(idx, 1);
+      setDatabaseImagesToDelete([...databaseImagesToDelete, selectedImage.uri]);
     }
+    setImagesUri([...temp2]);
+    console.log("temp = ", temp2);
+    console.log(
+      "if statement",
+      selectedImage.uri == mainImage,
+      selectedImage.uri,
+      mainImage
+    );
+    if (selectedImage.uri == mainImage) resetMainImage(temp2, temp);
   };
-  const pickImage = async () => {
+  // const removeSelectedImage = (item, toDelete = false) => {
+  //   let temp = [...imagesAssets];
+  //   var idx = temp.indexOf(item);
+  //   console.log("var = >", idx);
+  //   if (idx != -1) temp.splice(idx, 1);
+
+  //   setWarningTitle("Warning");
+  //   setWarningContent("Are you sure you want to remove image ?");
+  //   setOldImage(false);
+  //   setWarningVisible2(true);
+
+  //   setToDeleteImage(item);
+  //   if (toDelete) {
+  //     setImagesAssets(temp);
+  //     // setImagesAssets(imagesAssets);
+  //     if (temp.length == 0) setDisplayImages(false);
+  //   }
+  // };
+  const startPicking = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
@@ -379,65 +421,157 @@ export default function EditApartment({ navigation, route }) {
       uniqueArray = uniqueArray.filter((item) => typeof item !== "string");
       setImagesAssets(uniqueArray);
       setDisplayImages(true);
-    } else {
-      // setImagesAssets([]);
-      // setDisplayImages(false);
+      if (mainImage === "") {
+        resetMainImage(imagesUri, uniqueArray);
+      }
     }
   };
+  const pickImage = async () => {
+    if (status.granted === false)
+      await requestPermission().then(async (res) => {
+        if (res.granted) {
+          await startPicking();
+        } else {
+          setErrorTitle("Error");
+          setErrorContent(
+            "You've refused to allow this app to access your photos!"
+          );
+          setErrorVisible(true);
+        }
+      });
+    else {
+      await startPicking();
+    }
+  };
+  // const pickImage2 = async () => {
+  //   let result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  //     allowsMultipleSelection: true,
+  //     aspect: [1, 1],
+  //   });
+  //   if (!result.canceled) {
+  //     console.log(result);
+  //     // setImage(result.assets[0].uri);
+  //     let temp = [...imagesAssets, ...result.assets];
+  //     let uniqueArray = temp.filter((obj, index, self) => {
+  //       return (
+  //         index ===
+  //         self.findIndex((o) => {
+  //           return o.assetId === obj.assetId;
+  //         })
+  //       );
+  //     });
+  //     // console.log(temp, uniqueArray);
+  //     uniqueArray = uniqueArray.filter((item) => typeof item !== "string");
+  //     setImagesAssets(uniqueArray);
+  //     setDisplayImages(true);
+  //   } else {
+  //     // setImagesAssets([]);
+  //     // setDisplayImages(false);
+  //   }
+  // };
   const getImages = () => {
     pickImage();
   };
   const AddNewImages = () => {
     return (
       <View>
-        <TouchableOpacity
-          onPress={getImages}
-          style={styles.locationAndImagesBoxes}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
         >
-          <Text
-            style={{
-              textAlignVertical: "center",
-              marginRight: 10,
-              color: "black",
-            }}
+          <TouchableOpacity
+            onPress={getImages}
+            style={[styles.locationAndImagesBoxes, { flex: 1 }]}
           >
-            Insert images
-          </Text>
-          <Image
-            source={require("../assets/insertImage.png")}
-            style={{ height: 30, width: 30 }}
-          ></Image>
-        </TouchableOpacity>
-
-        {displayImages && (
-          <View style={{ width: "100%", height: 190 }}>
-            <TouchableOpacity
-              onPress={() => {
-                setImagesAssets([]);
-                setDisplayImages(false);
+            <Text
+              style={{
+                textAlignVertical: "center",
+                marginRight: 10,
+                color: "black",
               }}
             >
-              <Text
+              Insert images
+            </Text>
+            <Image
+              source={require("../assets/insertImage.png")}
+              style={{ height: 30, width: 30 }}
+            ></Image>
+          </TouchableOpacity>
+          {displayImages && (
+            <TouchableOpacity
+              onPress={() => {
+                console.log("pressed");
+                showMessage(TOAST.EditApartment);
+              }}
+              style={{
+                alignItems: "center",
+                flex: 0.1,
+                justifyContent: "center",
+                marginBottom: 10,
+                marginTop: 10,
+              }}
+            >
+              <Image
+                source={require("../assets/help2.png")}
                 style={{
-                  textAlignVertical: "center",
-                  textAlign: "center",
-                  color: "red",
-                  fontWeight: "bold",
+                  height: 30,
+                  width: 30,
+                  tintColor: theme.colors.primary,
+                }}
+              ></Image>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {displayImages && (
+          <>
+            <View
+              style={{
+                width: "100%",
+                height: 190,
+                borderWidth: 1,
+                borderRadius: 5,
+                borderColor: theme.colors.primary,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setWarningTitle("Warning");
+                  setWarningContent(
+                    "Are you sure you want to remove all images ?"
+                  );
+                  setWarningGoal("clearImages");
+                  setWarningVisible(true);
                 }}
               >
-                Clear images
+                <Text
+                  style={{
+                    textAlignVertical: "center",
+                    textAlign: "center",
+                    color: "red",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Clear images
+                </Text>
+              </TouchableOpacity>
+              <Text
+                style={{ textAlignVertical: "center", textAlign: "center" }}
+              >
+                Long press on image to remove
               </Text>
-            </TouchableOpacity>
-            <Text style={{ textAlignVertical: "center", textAlign: "center" }}>
-              Long press on image to remove
-            </Text>
-            <FlatList
-              nestedScrollEnabled
-              horizontal
-              data={imagesAssets}
-              renderItem={({ item }) => <ListItem item={item} />}
-            ></FlatList>
-          </View>
+              <FlatList
+                nestedScrollEnabled
+                horizontal
+                data={imagesAssets}
+                renderItem={({ item }) => <ListItem item={item} />}
+              ></FlatList>
+            </View>
+          </>
         )}
       </View>
     );
@@ -534,24 +668,64 @@ export default function EditApartment({ navigation, route }) {
       </Text>
       {write()}
       {imagesUri.length !== 0 && (
-        <View style={{ width: "100%", height: 220 }}>
-          <Text
-            style={{ fontSize: 20, textAlign: "center", fontWeight: "bold" }}
+        <View
+          style={{
+            width: "100%",
+            height: 190,
+            borderWidth: 1,
+            borderRadius: 5,
+            borderColor: theme.colors.primary,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
           >
-            Images
-          </Text>
-          <Text style={{ textAlignVertical: "center", textAlign: "center" }}>
-            Long press on image to set as main image or to remove
-          </Text>
-          {imagesUri.length !== 0 && (
-            <FlatList
-              showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled
-              horizontal
-              data={imagesUri}
-              renderItem={({ item }) => <ListItemEdit item={item} />}
-            ></FlatList>
-          )}
+            <Text
+              style={{
+                textAlignVertical: "center",
+                flex: 1,
+                fontSize: 20,
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              Images
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => {
+                console.log("pressed");
+                showMessage(TOAST.EditApartment);
+              }}
+              style={{
+                alignItems: "center",
+                flex: 0.1,
+                justifyContent: "center",
+                marginBottom: 10,
+                marginTop: 10,
+              }}
+            >
+              <Image
+                source={require("../assets/help2.png")}
+                style={{
+                  height: 30,
+                  width: 30,
+                  tintColor: theme.colors.primary,
+                }}
+              ></Image>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            horizontal
+            data={imagesUri}
+            renderItem={({ item }) => <ListItemEdit item={item} />}
+          ></FlatList>
         </View>
       )}
       <View style={{ width: "100%", height: 150, flexDirection: "row" }}>
@@ -567,7 +741,11 @@ export default function EditApartment({ navigation, route }) {
           Main Image
         </Text>
         <Image
-          source={{ uri: mainImage }}
+          source={
+            mainImage !== ""
+              ? { uri: mainImage }
+              : require("../assets/image.png")
+          }
           style={{ width: 140, height: 140, margin: 2, flex: 2 }}
           resizeMode="contain"
         ></Image>
@@ -600,7 +778,121 @@ export default function EditApartment({ navigation, route }) {
       </View>
     </ScrollView>
   );
-
+  const imageOptions = () => {
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => {
+          setIsModalVisible(!isModalVisible);
+        }}
+      >
+        <View style={styles.modalView}>
+          <ScrollView>
+            <View
+              style={{
+                width: "100%",
+                aspectRatio: 1,
+                borderWidth: 2,
+                borderRadius: 5,
+                backgroundColor: theme.colors.primaryBackground,
+                borderColor: theme.colors.primaryBorder,
+                padding: 2,
+              }}
+            >
+              <Image
+                style={{ width: "100%", height: "100%" }}
+                source={
+                  selectedImage.uri == ""
+                    ? require("../assets/image.png")
+                    : { uri: selectedImage.uri }
+                }
+                resizeMode="contain"
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                // flex: 1,
+                // // position: "absolute",
+                // bottom: 20,
+              }}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.CloseModal,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setMainImage(selectedImage.uri);
+                }}
+              >
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Set main image
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.CloseModal}
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setWarningVisible(true);
+                  setWarningContent("Are you sure you want to remove image ?");
+                  setWarningGoal("deletion");
+                }}
+              >
+                <Text
+                  style={{
+                    alignSelf: "center",
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "white",
+                  }}
+                >
+                  Delete
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={{
+                alignSelf: "center",
+                backgroundColor: theme.colors.primary,
+                width: "90%",
+                height: 40,
+                justifyContent: "center",
+                borderRadius: 5,
+              }}
+              onPress={() => {
+                // setApartments(apartmentsTemp);
+                // clearValues();
+                // setFiltered(false);
+                setIsModalVisible(false);
+              }}
+            >
+              <Text
+                style={{
+                  alignSelf: "center",
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  color: "white",
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+    );
+  };
   return (
     <Background>
       {/* <BackButton goBack={navigation.goBack} /> */}
@@ -610,6 +902,7 @@ export default function EditApartment({ navigation, route }) {
         <Text style={{ fontSize: 30 }}>Edit page</Text>
       </View> */}
       {ApartmentEditInfo()}
+      {imageOptions()}
       <Error
         visible={errorVisible}
         title={errorTitle}
@@ -637,14 +930,19 @@ export default function EditApartment({ navigation, route }) {
         }}
         onPressYes={() => {
           toCloseError();
-          console.log("yes pressed");
-          oldImage
-            ? removeSelectedImageUri(toDeleteImageUri, true)
-            : removeSelectedImage(toDeleteImage, true);
-          toCloseError();
+          if (warningGoal == "deletion") {
+            deleteImage();
+          } else if (warningGoal == "clearImages") {
+            setImagesAssets([]);
+            setDisplayImages(false);
+            let res = imagesAssets.find((item) => item.uri === mainImage);
+            if (res) {
+              resetMainImage(imagesUri, []);
+            }
+          }
         }}
       ></Warning>
-      <Warning
+      {/* <Warning
         // style={{ zIndex: 1 }}
         visible={warningVisible2}
         title={"Note"}
@@ -663,12 +961,34 @@ export default function EditApartment({ navigation, route }) {
           toCloseError();
           setWarningVisible(true);
         }}
-      ></Warning>
+      ></Warning> */}
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
     </Background>
   );
 }
 const styles = StyleSheet.create({
+  modalView: {
+    margin: 20,
+    justifyContent: "space-between",
+    // alignItems: "center",
+    // height: "100%",
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    shadowColor: "#000",
+    elevation: 10,
+  },
+  CloseModal: {
+    // display: "flex",
+    margin: 5,
+    flex: 1,
+    borderRadius: 5,
+    alignSelf: "center",
+    backgroundColor: "#fd0000",
+    width: "90%",
+    height: 40,
+    justifyContent: "center",
+  },
   textStyle: {
     textAlignVertical: "center",
     alignSelf: "center",

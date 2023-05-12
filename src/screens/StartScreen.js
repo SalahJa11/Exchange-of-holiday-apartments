@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebase";
-import { getUserData } from "../config/cloud";
+import { RelogIn, getUserData } from "../config/cloud";
 import Processing from "../components/Processing";
 import Error from "../components/Error";
 
@@ -29,32 +29,6 @@ export default function StartScreen({ navigation }) {
     typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
-  const fetchDate = async () => {
-    setIsProcessing(true);
-    try {
-      const user = auth.currentUser;
-      console.log("user = > ", user);
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          console.log("user = > ", user);
-          navigation.navigate("HomeScreen");
-          setIsProcessing(false);
-        } else {
-          setIsProcessing(false);
-        }
-      });
-    } catch (error) {
-      setErrorTitle("Error");
-      setErrorContent(error.message);
-      setIsProcessing(false);
-      setErrorVisible(true);
-    }
-  };
-  useEffect(() => {
-    setIsProcessing(true);
-    fetchDate();
-    setIsProcessing(false);
-  }, []);
 
   return (
     <Background>

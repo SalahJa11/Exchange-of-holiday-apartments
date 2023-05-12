@@ -48,40 +48,44 @@ export default function ApartmentInfo({ navigation, route }) {
   const [showPicker, setShowPicker] = useState(false);
   const [showPicker2, setShowPicker2] = useState(false);
   const [apartment, setApartment] = useState(route.params?.paramKey);
+  console.log(
+    "aparmkey apartment = route.params?.paramKey = ",
+    route.params?.paramKey
+  );
   const [checked, setChecked] = useState("apartment");
 
   const [myApartments, setMyApartments] = useState([
-    {
-      balcony: false,
-      denominator: 0,
-      numerator: 0,
-      Listed: false,
-      FromData: { nanoseconds: 0, seconds: 0 },
-      ToDate: { nanoseconds: 0, seconds: 0 },
-      Owner: "",
-      Type: "",
-      Rooms: "",
-      BedRooms: "",
-      Bathrooms: "",
-      Kitchens: "",
-      Name: "",
-      Description: "",
-      Location: [0, 0],
-      Images: [""],
-      Image:
-        "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    },
+    // {
+    //   balcony: false,
+    //   denominator: 0,
+    //   numerator: 0,
+    //   Listed: false,
+    //   FromData: { nanoseconds: 0, seconds: 0 },
+    //   ToDate: { nanoseconds: 0, seconds: 0 },
+    //   Owner: "",
+    //   Type: "",
+    //   Rooms: "",
+    //   BedRooms: "",
+    //   Bathrooms: "",
+    //   Kitchens: "",
+    //   Name: "",
+    //   Description: "",
+    //   Location: [0, 0],
+    //   Images: [""],
+    //   Image:
+    //     "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // },
   ]);
   const [owner, setOwner] = useState({
-    apartments: [],
-    denominator: 0,
-    email: "",
-    image: "",
-    isActive: false,
-    name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    numerator: 0,
-    personalID: "",
-    phoneNumber: "",
+    // apartments: [],
+    // denominator: 0,
+    // email: "",
+    // image: "",
+    // isActive: false,
+    // name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // numerator: 0,
+    // personalID: "",
+    // phoneNumber: "",
   });
   const [modalVisible, setModalVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
@@ -138,7 +142,7 @@ export default function ApartmentInfo({ navigation, route }) {
       console.log("ownerId = ", route.params?.paramKey.Owner);
       const res = await getApartmentOwner(route.params?.paramKey.Owner).then(
         (temp) => {
-          setOwner({ ...res });
+          setOwner({ ...temp });
           styleHeader(temp);
         }
       );
@@ -243,9 +247,24 @@ export default function ApartmentInfo({ navigation, route }) {
   const handleANewConversation = async () => {
     try {
       await startAChat(route.params?.paramKey.Owner).then((newChatId) => {
-        navigation.push("Chating", {
+        console.log(
+          "sending :",
+          {
+            paramKey: newChatId,
+            paramKeyEmail: owner.email,
+            paramKeyImage: owner.image,
+            paramKeyProfile: owner,
+            paramKeyName: owner.name,
+          },
+          "profile",
+          owner
+        );
+        navigation.navigate("Chating", {
           paramKey: newChatId,
-          paramKeyEmail: getMyEmail(),
+          paramKeyEmail: owner.email,
+          paramKeyImage: owner.image,
+          paramKeyProfile: owner,
+          paramKeyName: owner.name,
         });
       });
     } catch (error) {
@@ -941,7 +960,7 @@ export default function ApartmentInfo({ navigation, route }) {
         }}
       ></Warning>
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
-      <FlashMessage position="bottom" floating={true} />
+      {/* <FlashMessage position="bottom" floating={true} /> */}
     </Background>
   );
 }
