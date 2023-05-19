@@ -309,7 +309,10 @@ export default function AddMyApartment({ navigation }) {
             {apartments[index].Belcony ? "Belcony: exist" : "No belcony"}
           </Text>
           <Text style={styles.ProfileDetails}>
-            Rating: {apartments[index].Rating}
+            Rating:{" "}
+            {apartments[index].Rating === 0
+              ? "Not rated yet"
+              : apartments[index].Rating}
           </Text>
         </View>
         {apartments[index].Description !== "" && (
@@ -517,8 +520,8 @@ export default function AddMyApartment({ navigation }) {
                   color: "white",
                 }}
               >
-                {"Rating "}
-                {element.Rating}
+                {"Rating :"}
+                {element.Rating === 0 ? "Not rated yet" : element.Rating}
                 {"\n"}
                 {element.status}
               </Text>

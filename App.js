@@ -1,11 +1,9 @@
-/* eslint-disable prettier/prettier */
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Provider } from "react-native-paper";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import FlashMessage from "react-native-flash-message";
 import { auth } from "./src/config/firebase";
-
 import { theme } from "./src/core/theme";
 import {
   StartScreen,
@@ -131,7 +129,7 @@ export default function App() {
         />
         <Stack.Screen
           name="RegisterScreen"
-          options={{ title: "Registeration" }}
+          options={{ title: "Registration" }}
           component={RegisterScreen}
         />
         <Stack.Screen

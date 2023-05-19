@@ -21,40 +21,21 @@ import {
   arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
-import { getStorage, refFromURL, deleteObject } from "firebase/storage";
+import { deleteObject } from "firebase/storage";
 import {
   setPersistence,
   signInWithRedirect,
   inMemoryPersistence,
   GoogleAuthProvider,
 } from "firebase/auth";
-
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   signOut,
-  updateCurrentUser,
   getAuth,
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { googleDateToJavaDate } from "../helpers/DateFunctions";
-export async function RelogIn() {
-  await setPersistence(auth, inMemoryPersistence)
-    .then(() => {
-      const provider = new GoogleAuthProvider();
-      // In memory persistence will be applied to the signed in Google user
-      // even though the persistence was set to 'none' and a page redirect
-      // occurred.
-      return signInWithRedirect(auth, provider);
-    })
-    .catch((error) => {
-      // Handle Errors here.
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      throw new Error(errorMessage);
-    });
-}
 export async function createNewUser(
   userEmail,
   password,
@@ -110,7 +91,8 @@ export async function getMyOldUserRating(userId) {
   try {
     const allRatings = await getUserAllRates(userId);
     const oldRate = allRatings.find((rate) => rate.id == Id);
-    if (oldRate !== undefined) return oldRate.rate;
+    if (oldRate !== undefined)
+      return { rate: oldRate.rate, comment: oldRate.comment };
     return -1;
   } catch (error) {
     throw new Error(error.message);
@@ -123,7 +105,8 @@ export async function getMyOldApartmentRating(apartmentId) {
     const allRatings = await getApartmentAllRates(apartmentId);
     // console.log("allRatings = ", allRatings);
     const oldRate = allRatings.find((rate) => rate.id == Id);
-    if (oldRate !== undefined) return oldRate.rate;
+    if (oldRate !== undefined)
+      return { rate: oldRate.rate, comment: oldRate.comment };
   } catch (error) {
     throw new Error(error.message);
   }
@@ -133,11 +116,16 @@ export async function rateApartmentAndUser(
   userId,
   apartmentId,
   userRate,
-  apartmentRate
+  apartmentRate,
+  userComment,
+  apartmentComment
 ) {
   const user = auth.currentUser;
   const Id = user.uid;
   try {
+    const userData = await getUserData();
+    const userImage = userData.image;
+    console.log("userImage = ", userImage);
     async function removeAndUnion(object, object2, collection, id) {
       await updateDoc(doc(db, collection, id), {
         ratedBy: arrayRemove(object),
@@ -161,13 +149,23 @@ export async function rateApartmentAndUser(
       if (userOldRate !== undefined) {
         removeAndUnion(
           userOldRate,
-          { id: Id, rate: userRateNumber },
+          {
+            id: Id,
+            image: userImage !== undefined ? userImage : "",
+            rate: userRateNumber,
+            comment: userComment,
+          },
           "users",
           userId
         );
       } else {
         await updateDoc(doc(db, "users", userId), {
-          ratedBy: arrayUnion({ id: Id, rate: userRateNumber }),
+          ratedBy: arrayUnion({
+            id: Id,
+            image: userImage !== undefined ? userImage : "",
+            rate: userRateNumber,
+            comment: userComment,
+          }),
         });
       }
       if (apartmentId != "") {
@@ -176,7 +174,12 @@ export async function rateApartmentAndUser(
         if (apartmentOldRate !== undefined) {
           removeAndUnion(
             apartmentOldRate,
-            { id: Id, rate: apartmentRateNumber },
+            {
+              id: Id,
+              image: userImage !== undefined ? userImage : "",
+              rate: apartmentRateNumber,
+              comment: apartmentComment,
+            },
             "apartments",
             apartmentId
           );
@@ -186,10 +189,20 @@ export async function rateApartmentAndUser(
           });
         } else {
           await updateDoc(doc(db, "apartments", apartmentId), {
-            ratedBy: arrayUnion({ id: Id, rate: apartmentRateNumber }),
+            ratedBy: arrayUnion({
+              id: Id,
+              image: userImage !== undefined ? userImage : "",
+              rate: apartmentRateNumber,
+              comment: apartmentComment,
+            }),
             Rating: extractRating([
               ...allApartmentRates,
-              { id: Id, rate: apartmentRateNumber },
+              {
+                id: Id,
+                image: userImage !== undefined ? userImage : "",
+                rate: apartmentRateNumber,
+                comment: apartmentComment,
+              },
             ]),
           });
         }
@@ -473,7 +486,7 @@ export async function getAllListedApartments() {
     querySnapshot.forEach((doc) => {
       let apartmentId = doc.id;
       console.log(doc.id, " => ", doc.data());
-      if (doc.data().Listed)
+      if (doc.data().Listed && !doc.data().booked)
         finalResult.push({ ...doc.data(), apartmentId: apartmentId });
     });
   } catch (error) {

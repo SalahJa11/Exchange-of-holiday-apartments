@@ -36,6 +36,7 @@ import { Avatar } from "react-native-elements";
 import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
 import { TOAST } from "../core/TOASTText";
 import BackgroundForScroll from "../components/BackgroundForScroll";
+import ReviewsBox from "../components/ReviewsBox";
 
 export default function ApartmentInfo({ navigation, route }) {
   const [money, setMoney] = useState({ value: "", error: "" });
@@ -528,6 +529,7 @@ export default function ApartmentInfo({ navigation, route }) {
               renderItem={({ item }) => <ListItem item={item} />}
             ></FlatList>
           </View>
+          <ReviewsBox array={apartment.ratedBy} navigation={navigation} />
           {apartment.Owner != getMyId() && (
             <View style={{ width: "100%", height: 100 }}>
               <TouchableOpacity

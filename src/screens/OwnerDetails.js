@@ -23,6 +23,7 @@ import * as ImagePicker from "expo-image-picker";
 import { googleDateToJavaDate } from "../helpers/DateFunctions";
 import FlashMessage, { showMessage } from "react-native-flash-message";
 import { TOAST } from "../core/TOASTText";
+import ReviewsBox from "../components/ReviewsBox";
 
 export default function OwnerDetails({ navigation, route }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -189,7 +190,7 @@ export default function OwnerDetails({ navigation, route }) {
                 }}
               >
                 {"Rating "}
-                {element.Rating}
+                {element.Rating === 0 ? "Not rated yet" : element.Rating}
                 {"\n"}
                 {element.status}
               </Text>
@@ -228,8 +229,12 @@ export default function OwnerDetails({ navigation, route }) {
           <Text style={styles.ProfileDetails}>
             Phone number: {profile.phoneNumber}
           </Text>
-          <Text style={styles.ProfileDetails}>Rating: {profile.Rating}</Text>
+          <Text style={styles.ProfileDetails}>
+            Rating: {profile.Rating === 0 ? "Not rated yet" : profile.Rating}
+          </Text>
         </View>
+        <ReviewsBox array={profile.ratedBy} navigation={navigation} />
+
         {everyHouseCard()}
       </ScrollView>
       <Error

@@ -1,10 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Background from "../components/Background";
-import Logo from "../components/Logo";
-import Header from "../components/Header";
 import Button from "../components/Button";
-import { theme } from "../core/theme";
-import Paragraph from "../components/Paragraph";
 import {
   Text,
   ActivityIndicator,
@@ -13,12 +9,8 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../config/firebase";
-import { RelogIn, getUserData } from "../config/cloud";
 import Processing from "../components/Processing";
 import Error from "../components/Error";
-
 export default function StartScreen({ navigation }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
