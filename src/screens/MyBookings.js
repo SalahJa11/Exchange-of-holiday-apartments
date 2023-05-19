@@ -57,53 +57,53 @@ export default function MyBookings({ navigation }) {
   const [iAm, setIAm] = useState(0);
   const [byMoney, setByMoney] = useState(false);
   const [profile2, setProfile2] = useState({
-    apartments: [],
-    denominator: 0,
-    email: "",
-    image: "",
-    isActive: false,
-    name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    numerator: 0,
-    personalID: "",
-    phoneNumber: "",
+    // apartments: [],
+    // denominator: 0,
+    // email: "",
+    // image: "",
+    // isActive: false,
+    // name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // numerator: 0,
+    // personalID: "",
+    // phoneNumber: "",
   });
   const [apartment2, setApartment2] = useState({
-    balcony: false,
-    denominator: 0,
-    numerator: 0,
-    Listed: false,
-    FromData: { nanoseconds: 0, seconds: 0 },
-    ToDate: { nanoseconds: 0, seconds: 0 },
-    Owner: "",
-    Type: "",
-    Rooms: "",
-    BedRooms: "",
-    Bathrooms: "",
-    Kitchens: "",
-    Name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    Description: "",
-    Location: [0, 0],
-    Images: [""],
-    Image: "",
+    // balcony: false,
+    // denominator: 0,
+    // numerator: 0,
+    // Listed: false,
+    // FromData: { nanoseconds: 0, seconds: 0 },
+    // ToDate: { nanoseconds: 0, seconds: 0 },
+    // Owner: "",
+    // Type: "",
+    // Rooms: "",
+    // BedRooms: "",
+    // Bathrooms: "",
+    // Kitchens: "",
+    // Name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // Description: "",
+    // Location: [0, 0],
+    // Images: [""],
+    // Image: "",
   });
   const [apartment1, setApartment1] = useState({
-    balcony: false,
-    denominator: 0,
-    numerator: 0,
-    Listed: false,
-    FromData: { nanoseconds: 0, seconds: 0 },
-    ToDate: { nanoseconds: 0, seconds: 0 },
-    Owner: "",
-    Type: "",
-    Rooms: "",
-    BedRooms: "",
-    Bathrooms: "",
-    Kitchens: "",
-    Name: "",
-    Description: "",
-    Location: [0, 0],
-    Images: [""],
-    Image: "",
+    // balcony: false,
+    // denominator: 0,
+    // numerator: 0,
+    // Listed: false,
+    // FromData: { nanoseconds: 0, seconds: 0 },
+    // ToDate: { nanoseconds: 0, seconds: 0 },
+    // Owner: "",
+    // Type: "",
+    // Rooms: "",
+    // BedRooms: "",
+    // Bathrooms: "",
+    // Kitchens: "",
+    // Name: "",
+    // Description: "",
+    // Location: [0, 0],
+    // Images: [""],
+    // Image: "",
   });
   const [index, setIndex] = useState(0);
   let myId = getMyId();
@@ -259,7 +259,14 @@ export default function MyBookings({ navigation }) {
   };
   const filterWindow = () => {
     return (
-      <Modal animationType="slide" transparent={true} visible={filterVisible}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterVisible}
+        onRequestClose={() => {
+          setFilterVisible(!filterVisible);
+        }}
+      >
         <View style={styles.modalView}>
           <View style={{ width: "100%" }}>
             <View style={{ justifyContent: "space-around" }}>
@@ -602,7 +609,7 @@ export default function MyBookings({ navigation }) {
             style={{ width: "100%", width: "100%", aspectRatio: 1 }}
             onLongPress={() => {
               setModalVisible(false);
-              navigation.navigate("ApartmentInfo", {
+              navigation.push("ApartmentInfo", {
                 paramKey: apartment1,
               });
             }}
@@ -651,7 +658,7 @@ export default function MyBookings({ navigation }) {
               <TouchableOpacity
                 onPress={() => {
                   setModalVisible(false);
-                  navigation.navigate("ApartmentInfo", {
+                  navigation.push("ApartmentInfo", {
                     paramKey: apartment1,
                   });
                 }}
@@ -720,7 +727,7 @@ export default function MyBookings({ navigation }) {
             <TouchableOpacity
               onPress={() => {
                 setModalVisible(false);
-                navigation.navigate("ApartmentInfo", {
+                navigation.push("ApartmentInfo", {
                   paramKey: apartment2,
                 });
               }}
@@ -1173,7 +1180,7 @@ export default function MyBookings({ navigation }) {
         animationType="slide"
         style={{ width: "100%" }}
         onRequestClose={() => {
-          setModalVisible(!modalVisible);
+          setModalVisible(false);
         }}
       >
         {/* <TouchableOpacity
@@ -1315,7 +1322,7 @@ export default function MyBookings({ navigation }) {
         }}
       ></Warning>
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
-      <FlashMessage position="bottom" floating={true} />
+      {/* <FlashMessage position="bottom" floating={true} /> */}
     </Background>
   );
 }

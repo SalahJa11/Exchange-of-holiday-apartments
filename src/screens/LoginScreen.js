@@ -11,16 +11,16 @@ import { theme } from "../core/theme";
 import { emailValidator } from "../helpers/emailValidator";
 import { passwordValidator } from "../helpers/passwordValidator";
 import { ScrollView } from "react-native-gesture-handler";
-import { logIn } from "../config/cloud";
+import { logIn, signOutUser } from "../config/cloud";
 import { auth } from "../config/firebase";
 import Processing from "../components/Processing";
 import Warning from "../components/Warning";
 import Note from "../components/Note";
 import { sendEmailVerification } from "firebase/auth";
-import Error from "../components/Error";
+import MyError from "../components/Error";
 import BackgroundForScroll from "../components/BackgroundForScroll";
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, setUser }) {
   const [email, setEmail] = useState({ value: "", error: "" });
   const [password, setPassword] = useState({ value: "", error: "" });
 
@@ -53,19 +53,33 @@ export default function LoginScreen({ navigation }) {
       .then(async () => {
         const user = auth.currentUser;
         console.log("user = > ", user.emailVerified, user);
-        if (user.emailVerified) navigation.replace("HomeScreen");
-        else {
-          await sendEmailVerification(auth.currentUser).then(() => {
-            setNoteTitle("Note");
-            setNoteContent(
-              "Please check your email\n A verification email has been sent to your email"
-            );
-            setNoteVisible(true);
-          });
+        if (user.emailVerified) {
+          // navigation.reset();
+          // typeof setUser === "function" ? setUser(user) : undefined;
+          // navigation.replace("HomeScreen")
+        } else {
+          await sendEmailVerification(auth.currentUser)
+            .then(() => {
+              signOutUser();
+              setNoteTitle("Note");
+              setNoteContent(
+                "Please check your email\n A verification email has been sent to your email"
+              );
+              setNoteVisible(true);
+            })
+            .catch((error) => {
+              // console.error("error =>", error.code, error.message);
+              if (error.code === "auth/too-many-requests")
+                throw new Error(
+                  "A verification Email already been sent,\nPlease check your email "
+                );
+            });
         }
         setIsProcessing(false);
       })
       .catch((error) => {
+        console.error(error.message);
+
         setErrorTitle("Error");
         setErrorContent(error.message);
         setIsProcessing(false);
@@ -123,7 +137,7 @@ export default function LoginScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
-      <Error
+      <MyError
         visible={errorVisible}
         title={errorTitle}
         content={errorContent}

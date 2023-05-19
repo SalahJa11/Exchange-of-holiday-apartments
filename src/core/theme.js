@@ -26,3 +26,7 @@ export const theme = {
     // cancelled:"#6200ee",
   },
 };
+export const Images = {
+  profile:
+    "https://firebasestorage.googleapis.com/v0/b/apartments-exhange.appspot.com/o/images%2Fprofile.png?alt=media&token=416159d6-ec1f-4bfa-8e15-8bf014324b56",
+};

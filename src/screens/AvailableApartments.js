@@ -93,7 +93,7 @@ export default function AvailableApartments({ navigation }) {
     setIsProcessing(true);
     try {
       const res = await getAllListedApartments();
-      console.log("new res = ", res, res[0].ToDate);
+      console.log("new res = ", res);
       setApartments([...res]);
       setApartmentsTemp([...res]);
       // console.log("new apartments = ", apartments);
@@ -423,7 +423,7 @@ export default function AvailableApartments({ navigation }) {
         transparent={true}
         visible={isModalVisible}
         onRequestClose={() => {
-          setModalVisible(!isModalVisible);
+          setIsModalVisible(!isModalVisible);
         }}
       >
         <View style={styles.modalView}>

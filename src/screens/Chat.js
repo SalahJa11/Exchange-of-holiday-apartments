@@ -46,9 +46,16 @@ export default function Chat({ navigation }) {
           style={{ marginBottom: 5 }}
           key={index}
           onPress={() => {
+            console.log("sending :", {
+              paramKey: getChatId(user.id),
+              paramKeyEmail: user.email,
+              paramKeyImage: user.image,
+              paramKeyProfile: user,
+              paramKeyName: user.name,
+            });
             navigation.navigate("Chating", {
               paramKey: getChatId(user.id),
-              paramKeyEmail: getMyEmail(),
+              paramKeyEmail: user.email,
               paramKeyImage: user.image,
               paramKeyProfile: user,
               paramKeyName: user.name,
@@ -70,6 +77,7 @@ export default function Chat({ navigation }) {
             />
             <Text
               style={{
+                width: "100%",
                 textAlignVertical: "center",
                 textAlign: "left",
                 marginLeft: 20,

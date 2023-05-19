@@ -13,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebase";
@@ -26,6 +27,7 @@ import Processing from "../components/Processing";
 import { Rating as CRating, AirbnbRating } from "react-native-ratings";
 import Note from "../components/Note";
 import Error from "../components/Error";
+import BackgroundForScroll from "../components/BackgroundForScroll";
 // import { Image } from "react-native-elements";
 export default function Rating({ navigation, route }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -47,6 +49,8 @@ export default function Rating({ navigation, route }) {
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
   const [profile, setProfile] = useState(route.params?.paramKeyProfile);
+  const [userComment, setUserComment] = useState("");
+  const [apartmentComment, setApartmentComment] = useState("");
   const [apartment, setApartment2] = useState(route.params?.paramKeyAparment);
   const [oldUserRate, setOldUserRate] = useState(0);
   const [oldApartmentRate, setOldApartmentRate] = useState(0);
@@ -55,15 +59,18 @@ export default function Rating({ navigation, route }) {
   async function fetchData() {
     if (!isObjEmpty(apartment)) {
       console.log("owner?", apartment.Owner);
-      let oldApartmentRating = await getMyOldApartmentRating(
-        apartment.apartmentId
-      );
-      setOldApartmentRate(oldApartmentRating);
+      await getMyOldApartmentRating(apartment.apartmentId).then((res) => {
+        setOldApartmentRate(res.rate);
+        setApartmentComment(res.comment);
+      });
     }
-    let oldUserRating = await getMyOldUserRating(profile.userId);
+    await getMyOldUserRating(profile.userId).then((res) => {
+      setOldUserRate(res.rate);
+      setUserComment(res.comment);
+      console.log("res.comment", res.comment);
+    });
     // console.log("oldUserRating", oldUserRating);
     // console.log("oldApartmentRating", oldApartmentRating);
-    setOldUserRate(oldUserRating);
   }
   useEffect(() => {
     fetchData().catch((error) => {
@@ -79,7 +86,9 @@ export default function Rating({ navigation, route }) {
         profile.userId,
         isObjEmpty(apartment) ? "" : apartment.apartmentId,
         newUserRate,
-        newApartmentRate
+        newApartmentRate,
+        userComment,
+        apartmentComment
       ).then(() => {
         setIsProcessing(false);
         setNoteTitle("Note");
@@ -107,79 +116,103 @@ export default function Rating({ navigation, route }) {
       return (
         <View
           style={{
-            flexDirection: "row",
             width: "100%",
-            borderWidth: 2,
+            // borderWidth: 2,
+            // borderColor: theme.colors.primaryBorder,
             padding: 10,
-            backgroundColor: "#323232",
-            justifyContent: "space-between",
+            // backgroundColor: theme.colors.primaryBackground,
           }}
         >
           <View
             style={{
-              width: "60%",
-              //   aspectRatio: 1,
-              // borderWidth: 2,
-              //   borderRadius: 3,
+              flexDirection: "row",
+              width: "100%",
+              justifyContent: "space-between",
             }}
           >
             <View
               style={{
-                width: "100%",
-                aspectRatio: 1,
-                borderWidth: 2,
-                borderRadius: 3,
+                width: "60%",
+                //   aspectRatio: 1,
+                // borderWidth: 2,
+                //   borderRadius: 3,
               }}
             >
-              <Image
-                style={{ width: "100%", aspectRatio: 1 }}
-                source={{ uri: apartment.Image }}
-              />
-            </View>
-            <Text
-              style={{
-                marginTop: 3,
-                textAlign: "center",
-                textAlignVertical: "center",
-                fontWeight: "bold",
-                color: "white",
-              }}
-            >
-              {apartment.Name.slice(0, 20)}
-            </Text>
-          </View>
-          <View
-            style={{
-              justifyContent: "center",
-            }}
-          >
-            <CRating
-              minValue={1}
-              tintColor="#323232"
-              style={{
-                backgroundColor: "#323232",
-                alignSelf: "center",
-                marginBottom: 50,
-              }}
-              //   type="star"
-              ratingCount={5}
-              imageSize={25}
-              showRating
-              onFinishRating={ratingApartment}
-            />
-            {oldApartmentRate <= 5 && oldApartmentRate >= 1 && (
+              <View
+                style={{
+                  width: "100%",
+                  aspectRatio: 1,
+                  borderWidth: 2,
+                  borderColor: theme.colors.primaryBorder,
+                  borderRadius: 3,
+                }}
+              >
+                <Image
+                  style={{ width: "100%", aspectRatio: 1 }}
+                  source={{ uri: apartment.Image }}
+                />
+              </View>
               <Text
                 style={{
+                  marginTop: 3,
                   textAlign: "center",
                   textAlignVertical: "center",
                   fontWeight: "bold",
-                  color: "white",
+                  color: "black",
                 }}
               >
-                Old rating was {oldApartmentRate}/5
+                {apartment.Name.slice(0, 20)}
               </Text>
-            )}
+            </View>
+            <View
+              style={{
+                justifyContent: "center",
+              }}
+            >
+              <CRating
+                minValue={1}
+                tintColor={theme.colors.surface}
+                style={{
+                  borderWidth: 3,
+                  borderRadius: 4,
+                  backgroundColor: "#323232",
+                  alignSelf: "center",
+                  marginBottom: 50,
+                }}
+                ratingCount={5}
+                imageSize={25}
+                showRating
+                onFinishRating={ratingApartment}
+              />
+              {oldApartmentRate <= 5 && oldApartmentRate >= 1 && (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    textAlignVertical: "center",
+                    fontWeight: "bold",
+                    color: "black",
+                  }}
+                >
+                  Old rating was {oldApartmentRate}/5
+                </Text>
+              )}
+            </View>
           </View>
+          <TextInput
+            multiline={true}
+            style={{
+              borderWidth: 1,
+              borderColor: theme.colors.primaryBorder,
+              borderRadius: 3,
+              margin: 3,
+              backgroundColor: theme.colors.surface,
+              minHeight: 50,
+              paddingLeft: 5,
+            }}
+            placeholder="(Optional)"
+            value={apartmentComment}
+            onChangeText={(text) => setApartmentComment(text)}
+          ></TextInput>
         </View>
       );
     else {
@@ -188,9 +221,10 @@ export default function Rating({ navigation, route }) {
           style={{
             flexDirection: "row",
             width: "100%",
-            borderWidth: 2,
+            // borderWidth: 2,
+            // borderColor: theme.colors.primaryBorder,
             padding: 10,
-            backgroundColor: "#323232",
+            // backgroundColor: theme.colors.primaryBackground,
             justifyContent: "space-between",
           }}
         >
@@ -207,6 +241,7 @@ export default function Rating({ navigation, route }) {
                 width: "100%",
                 aspectRatio: 1,
                 borderWidth: 2,
+                borderColor: theme.colors.primaryBorder,
                 borderRadius: 3,
               }}
             >
@@ -223,13 +258,14 @@ export default function Rating({ navigation, route }) {
           >
             <Text
               style={{
+                flex: 1,
                 textAlign: "center",
                 textAlignVertical: "center",
                 fontWeight: "bold",
-                color: "white",
+                color: "black",
               }}
             >
-              Apartment got deleted
+              Apartment not set{"\n"}or deleted
             </Text>
           </View>
         </View>
@@ -237,90 +273,120 @@ export default function Rating({ navigation, route }) {
     }
   };
   return (
-    <Background innerStyle={{ justifyContent: "space-between" }}>
+    <BackgroundForScroll>
       {/* <View style={styles.View0}> */}
-      <View
-        style={{
-          flexDirection: "row",
-          width: "100%",
-          borderWidth: 2,
-          padding: 10,
-          backgroundColor: "#323232",
-          justifyContent: "space-between",
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ width: "100%" }}
+        contentContainerStyle={{
+          // flexGrow: 1,
+          justifyContent: "center",
+          backgroundColor: theme.colors.primaryBackground,
+          borderWidth: 3,
+          borderRadius: 3,
+          borderColor: theme.colors.primary,
         }}
       >
         <View
           style={{
-            width: "60%",
-            //   aspectRatio: 1,
+            width: "100%",
             // borderWidth: 2,
-            //   borderRadius: 3,
+            // borderColor: theme.colors.primaryBorder,
+            padding: 10,
+            // backgroundColor: theme.colors.primaryBackground,
           }}
         >
           <View
             style={{
+              flexDirection: "row",
               width: "100%",
-              aspectRatio: 1,
-              borderWidth: 2,
-              borderRadius: 3,
+              justifyContent: "space-between",
             }}
           >
-            <Image
-              style={{ width: "100%", aspectRatio: 1 }}
-              source={{ uri: profile.image }}
-            />
-          </View>
-          <Text
-            style={{
-              marginTop: 3,
-              textAlign: "center",
-              textAlignVertical: "center",
-              fontWeight: "bold",
-              color: "white",
-            }}
-          >
-            {profile.name.slice(0, 20)}
-          </Text>
-        </View>
-        <View
-          style={{
-            justifyContent: "center",
-          }}
-        >
-          <CRating
-            minValue={1}
-            startingValue={3}
-            //   type="custom"
-            //   ratingColor="#3498db"
-            //   ratingBackgroundColor="gray"
-            //   ratingColor="gray"
-            tintColor="#323232"
-            // style={{
-            //   backgroundColor: "#323232",
-            //   alignSelf: "center",
-            //   marginBottom: 50,
-            // }}
-            //   type="star"
-            ratingCount={5}
-            imageSize={25}
-            showRating
-            onFinishRating={ratingUser}
-          />
-          {oldUserRate <= 5 && oldUserRate >= 1 && (
-            <Text
+            <View
               style={{
-                textAlign: "center",
-                textAlignVertical: "center",
-                fontWeight: "bold",
-                color: "white",
+                width: "60%",
               }}
             >
-              Old rating was {oldUserRate}/5
-            </Text>
-          )}
+              <View
+                style={{
+                  width: "100%",
+                  aspectRatio: 1,
+                  borderWidth: 2,
+                  borderColor: theme.colors.primaryBorder,
+                  borderRadius: 3,
+                }}
+              >
+                <Image
+                  style={{ width: "100%", aspectRatio: 1 }}
+                  source={{ uri: profile.image }}
+                />
+              </View>
+              <Text
+                style={{
+                  marginTop: 3,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                  fontWeight: "bold",
+                  color: "black",
+                }}
+              >
+                {profile.name.slice(0, 20)}
+              </Text>
+            </View>
+            <View
+              style={{
+                justifyContent: "center",
+              }}
+            >
+              <CRating
+                minValue={1}
+                startingValue={3}
+                tintColor={theme.colors.surface}
+                style={{
+                  borderWidth: 3,
+                  borderRadius: 4,
+                  backgroundColor: "#323232",
+                  alignSelf: "center",
+                  marginBottom: 50,
+                }}
+                ratingCount={5}
+                imageSize={25}
+                showRating
+                onFinishRating={ratingUser}
+              />
+              {oldUserRate <= 5 && oldUserRate >= 1 && (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    textAlignVertical: "center",
+                    fontWeight: "bold",
+                    color: "black",
+                  }}
+                >
+                  Old rating was {oldUserRate}/5
+                </Text>
+              )}
+            </View>
+          </View>
+          <TextInput
+            multiline={true}
+            style={{
+              borderWidth: 1,
+              borderColor: theme.colors.primaryBorder,
+              borderRadius: 3,
+              margin: 10,
+              backgroundColor: theme.colors.surface,
+              minHeight: 50,
+              paddingLeft: 5,
+            }}
+            placeholder="(Optional)"
+            value={userComment}
+            onChangeText={(text) => setUserComment(text)}
+          ></TextInput>
         </View>
-      </View>
-      {apartmentRatingBox()}
+        {apartmentRatingBox()}
+      </ScrollView>
       <TouchableOpacity
         style={[
           styles.profilePressableButtons,
@@ -360,7 +426,7 @@ export default function Rating({ navigation, route }) {
         secondKey={false}
       ></Note>
       <Processing visible={isProcessing} content={"Loading..."}></Processing>
-    </Background>
+    </BackgroundForScroll>
   );
 }
 const styles = StyleSheet.create({

@@ -4,12 +4,12 @@ export function fixDate(
 ) {
   console.log(typeof date);
   if (typeof date === "number") {
-    console.log(typeof date);
+    // console.log(typeof date);
     let temp = new Date(date).toLocaleDateString("en-US");
     return fixDate(temp);
   }
   if (typeof date === "string") {
-    console.log("sample got ", date);
+    // console.log("sample got ", date);
     if (typeof date !== "string") return "UnSet";
     let temp = date.split("/");
     return (

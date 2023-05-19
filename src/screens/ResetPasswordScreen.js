@@ -52,12 +52,10 @@ export default function ResetPasswordScreen({ navigation }) {
   }
   return (
     <Background>
-      <BackButton goBack={navigation.goBack} />
       <Logo />
       {/* <View> */}
       {/* <Header>Restore Password</Header> */}
       <TextInput
-        style={{ zindex: 0 }}
         label="E-mail address"
         returnKeyType="done"
         value={email.value}
@@ -76,9 +74,8 @@ export default function ResetPasswordScreen({ navigation }) {
           sendResetPasswordEmail();
         }}
         style={{ marginTop: 16 }}
-      >
-        Send Instructions
-      </Button>
+        title="Send reset email"
+      />
       {/* </View> */}
       <Error
         visible={errorVisible}

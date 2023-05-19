@@ -14,24 +14,28 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
-  increment,
   query,
-  orderBy,
   where,
   Timestamp,
   arrayUnion,
   arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
+import { deleteObject } from "firebase/storage";
+import {
+  setPersistence,
+  signInWithRedirect,
+  inMemoryPersistence,
+  GoogleAuthProvider,
+} from "firebase/auth";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   signOut,
-  updateCurrentUser,
   getAuth,
   sendPasswordResetEmail,
 } from "firebase/auth";
+import { googleDateToJavaDate } from "../helpers/DateFunctions";
 export async function createNewUser(
   userEmail,
   password,
@@ -52,7 +56,8 @@ export async function createNewUser(
       email: userEmail,
       personalID: userPersonalID,
       phoneNumber: phoneNumber,
-      image: "",
+      image:
+        "https://firebasestorage.googleapis.com/v0/b/apartments-exhange.appspot.com/o/images%2Fprofile.png?alt=media&token=416159d6-ec1f-4bfa-8e15-8bf014324b56",
       apartments: [],
       chatsId: [],
       bookings: [],
@@ -61,8 +66,8 @@ export async function createNewUser(
 
     return userID;
   } catch (error) {
-    console.error(error);
-    console.error(error.message);
+    // console.error(error);
+    // console.error(error.message);
     throw new Error(error.message);
   }
 }
@@ -86,7 +91,8 @@ export async function getMyOldUserRating(userId) {
   try {
     const allRatings = await getUserAllRates(userId);
     const oldRate = allRatings.find((rate) => rate.id == Id);
-    if (oldRate !== undefined) return oldRate.rate;
+    if (oldRate !== undefined)
+      return { rate: oldRate.rate, comment: oldRate.comment };
     return -1;
   } catch (error) {
     throw new Error(error.message);
@@ -99,9 +105,10 @@ export async function getMyOldApartmentRating(apartmentId) {
     const allRatings = await getApartmentAllRates(apartmentId);
     // console.log("allRatings = ", allRatings);
     const oldRate = allRatings.find((rate) => rate.id == Id);
-    if (oldRate !== undefined) return oldRate.rate;
+    if (oldRate !== undefined)
+      return { rate: oldRate.rate, comment: oldRate.comment };
   } catch (error) {
-    console.error(error.message);
+    throw new Error(error.message);
   }
   return -1;
 }
@@ -109,11 +116,16 @@ export async function rateApartmentAndUser(
   userId,
   apartmentId,
   userRate,
-  apartmentRate
+  apartmentRate,
+  userComment,
+  apartmentComment
 ) {
   const user = auth.currentUser;
   const Id = user.uid;
   try {
+    const userData = await getUserData();
+    const userImage = userData.image;
+    console.log("userImage = ", userImage);
     async function removeAndUnion(object, object2, collection, id) {
       await updateDoc(doc(db, collection, id), {
         ratedBy: arrayRemove(object),
@@ -137,13 +149,23 @@ export async function rateApartmentAndUser(
       if (userOldRate !== undefined) {
         removeAndUnion(
           userOldRate,
-          { id: Id, rate: userRateNumber },
+          {
+            id: Id,
+            image: userImage !== undefined ? userImage : "",
+            rate: userRateNumber,
+            comment: userComment,
+          },
           "users",
           userId
         );
       } else {
         await updateDoc(doc(db, "users", userId), {
-          ratedBy: arrayUnion({ id: Id, rate: userRateNumber }),
+          ratedBy: arrayUnion({
+            id: Id,
+            image: userImage !== undefined ? userImage : "",
+            rate: userRateNumber,
+            comment: userComment,
+          }),
         });
       }
       if (apartmentId != "") {
@@ -152,7 +174,12 @@ export async function rateApartmentAndUser(
         if (apartmentOldRate !== undefined) {
           removeAndUnion(
             apartmentOldRate,
-            { id: Id, rate: apartmentRateNumber },
+            {
+              id: Id,
+              image: userImage !== undefined ? userImage : "",
+              rate: apartmentRateNumber,
+              comment: apartmentComment,
+            },
             "apartments",
             apartmentId
           );
@@ -162,10 +189,20 @@ export async function rateApartmentAndUser(
           });
         } else {
           await updateDoc(doc(db, "apartments", apartmentId), {
-            ratedBy: arrayUnion({ id: Id, rate: apartmentRateNumber }),
+            ratedBy: arrayUnion({
+              id: Id,
+              image: userImage !== undefined ? userImage : "",
+              rate: apartmentRateNumber,
+              comment: apartmentComment,
+            }),
             Rating: extractRating([
               ...allApartmentRates,
-              { id: Id, rate: apartmentRateNumber },
+              {
+                id: Id,
+                image: userImage !== undefined ? userImage : "",
+                rate: apartmentRateNumber,
+                comment: apartmentComment,
+              },
             ]),
           });
         }
@@ -177,13 +214,6 @@ export async function rateApartmentAndUser(
     throw new Error(error.message);
   }
 }
-const googleDateToJavaDate = (
-  timestamp = { nanoseconds: 0, seconds: 1676563345 }
-) => {
-  return new Date(
-    timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-  ).toLocaleDateString("en-US");
-};
 export async function confirmABooking(
   bookingId,
   apartment1Id,
@@ -456,7 +486,7 @@ export async function getAllListedApartments() {
     querySnapshot.forEach((doc) => {
       let apartmentId = doc.id;
       console.log(doc.id, " => ", doc.data());
-      if (doc.data().Listed)
+      if (doc.data().Listed && !doc.data().booked)
         finalResult.push({ ...doc.data(), apartmentId: apartmentId });
     });
   } catch (error) {
@@ -481,7 +511,17 @@ export async function getValidApartmentById(id) {
     if (res.exists()) {
       let result = res.data();
       if (result.booked) {
-        console.log("checking booked apartment");
+        console.log(
+          "checking booked apartment",
+          result.ToDate,
+          googleDateToJavaDate(result.ToDate)
+        );
+        console.log(
+          new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0) <
+            temp,
+          new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0),
+          temp
+        );
         if (
           new Date(googleDateToJavaDate(result.ToDate)).setHours(0, 0, 0, 0) <
           temp
@@ -548,15 +588,21 @@ export async function editApartment(
   fromDate,
   toDate,
   listed,
-  belcony
+  belcony,
+  toDeleteImages
 ) {
+  console.log("toDeleteImages", toDeleteImages);
   const user = auth.currentUser;
   const Id = user.uid;
   try {
+    console.log("done-1");
+
     const toDeleteApartment = await getValidApartmentById(apartmentId);
     if (toDeleteApartment.booked) {
       throw new Error("Cant edit booked apartment");
     }
+    console.log("done0");
+
     let time = new Date().getTime();
     if (!(imageAssets.length === 0)) {
       let imagesUri = [];
@@ -592,8 +638,15 @@ export async function editApartment(
       Listed: listed,
     });
     console.log("done4");
+    for (const uri of toDeleteImages) {
+      const imageRef = ref(storage, uri);
+      console.log("imageRef", imageRef);
+      await deleteObject(imageRef).then(() => {
+        console.log("Image deleted successfully");
+      });
+    }
   } catch (error) {
-    console.log(error);
+    throw new Error(error.message);
   }
 }
 export async function listApartment(apartmentId, toList) {
@@ -736,6 +789,9 @@ export async function logIn(email, password) {
     .catch((error) => {
       const errorCode = error.code;
       const errorMessage = error.message;
+      console.log(errorCode, errorMessage);
+      if (errorCode === "auth/user-not-found")
+        throw new Error("Invalid Email or Password");
       throw new Error(error.message);
       // return error;
     });
@@ -758,7 +814,7 @@ export async function signOutUser() {
       return true;
     })
     .catch((error) => {
-      console.error(error);
+      // console.error(error);
       throw Error(error.message);
     });
 }

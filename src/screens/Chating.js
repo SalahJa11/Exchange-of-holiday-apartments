@@ -23,34 +23,39 @@ import {
   SystemMessage,
 } from "react-native-gifted-chat";
 import BackButton from "../components/BackButton";
-import { getUserData } from "../config/cloud";
+import { getMyEmail, getUserData } from "../config/cloud";
 import { Avatar } from "react-native-elements";
-import { theme } from "../core/theme";
+import { Images, theme } from "../core/theme";
 export default function Chating({ navigation, route }) {
   const [chatId, setChatId] = useState(route.params?.paramKey);
+  // const profile = getUserData();
   const [profile, setProfile] = useState({
-    apartments: [],
-    denominator: 0,
     email: route.params?.paramKeyEmail,
-    image: "",
-    isActive: false,
-    name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    numerator: 0,
-    personalID: "",
-    phoneNumber: "",
+    image: route.params?.paramKeyImage,
+    name: route.params?.paramKeyName,
   });
-  async function handleRefresh() {
-    await getUserData()
-      .then((profile) => {
-        console.log("profile is ", profile);
-        if (profile == "") {
-          console.log("sign out function required !");
-        } else {
-          setProfile(profile);
-        }
-      })
-      .catch((error) => {});
-  }
+  // getUserData().then(() => {
+  //   console.log(
+  //     "getUserData()",
+  //     getUserData().then((res) => {
+  //       // setProfile({ ...profile, image: res.image, name: res.name });
+  //       // console.log("getUserData().res", res);
+  //     })
+  //   );
+  // });
+
+  // async function handleRefresh() {
+  //   await getUserData()
+  //     .then((profile) => {
+  //       console.log("profile is ", profile);
+  //       if (profile == "") {
+  //         console.log("sign out function required !");
+  //       } else {
+  //         setProfile(profile);
+  //       }
+  //     })
+  //     .catch((error) => {});
+  // }
   const [messages, setMessages] = useState([]);
   useLayoutEffect(() => {
     console.log("received", route);
@@ -115,17 +120,20 @@ export default function Chating({ navigation, route }) {
   }, [navigation]);
 
   useEffect(() => {
-    handleRefresh();
+    getUserData().then((res) => {
+      setProfile({ ...profile, image: res.image, name: res.name });
+      console.log("getUserData().res", res);
+    });
+
     setMessages([
       {
-        _id: 1,
+        _id: "1",
         text: "Loading ...",
         createdAt: new Date(),
         user: {
-          _id: 2,
+          _id: "2",
           name: "Loading",
-          avatar:
-            "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/profile.png?alt=media&token=4b2307ea-21b5-4c88-85d5-97fc8a532cc6",
+          avatar: Images.profile,
         },
       },
     ]);
@@ -174,13 +182,13 @@ export default function Chating({ navigation, route }) {
   return (
     <GiftedChat
       messages={messages}
-      showAvatarForEveryMessage={true}
+      showAvatarForEveryMessage={false}
       onSend={(messages) => onSend(messages)}
       renderInputToolbar={(props) => customtInputToolbar(props)}
       renderSystemMessage={(props) => customSystemMessage(props)}
       renderBubble={renderBubble}
       user={{
-        _id: profile.email,
+        _id: getMyEmail(),
         name: profile.name,
         avatar: profile.image,
       }}

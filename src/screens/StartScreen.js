@@ -1,10 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Background from "../components/Background";
-import Logo from "../components/Logo";
-import Header from "../components/Header";
 import Button from "../components/Button";
-import { theme } from "../core/theme";
-import Paragraph from "../components/Paragraph";
 import {
   Text,
   ActivityIndicator,
@@ -13,12 +9,8 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../config/firebase";
-import { getUserData } from "../config/cloud";
 import Processing from "../components/Processing";
 import Error from "../components/Error";
-
 export default function StartScreen({ navigation }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
@@ -29,32 +21,6 @@ export default function StartScreen({ navigation }) {
     typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
-  const fetchDate = async () => {
-    setIsProcessing(true);
-    try {
-      const user = auth.currentUser;
-      console.log("user = > ", user);
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          console.log("user = > ", user);
-          navigation.navigate("HomeScreen");
-          setIsProcessing(false);
-        } else {
-          setIsProcessing(false);
-        }
-      });
-    } catch (error) {
-      setErrorTitle("Error");
-      setErrorContent(error.message);
-      setIsProcessing(false);
-      setErrorVisible(true);
-    }
-  };
-  useEffect(() => {
-    setIsProcessing(true);
-    fetchDate();
-    setIsProcessing(false);
-  }, []);
 
   return (
     <Background>

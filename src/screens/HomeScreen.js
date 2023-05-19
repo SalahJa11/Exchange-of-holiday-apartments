@@ -18,21 +18,22 @@ import Button from "../components/Button";
 import { theme } from "../core/theme";
 import { signOutUser, getUserData, serverTime } from "../config/cloud";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ReviewsBox from "../components/ReviewsBox";
 
 export default function HomeScreen({ navigation, route }) {
   const wait = (timeout) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
   };
   const [profile, setProfile] = useState({
-    apartments: [],
-    denominator: 0,
-    email: "example@example.example",
-    image: "",
-    isActive: false,
-    name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
-    numerator: 0,
-    personalID: "",
-    phoneNumber: "",
+    // apartments: [],
+    // denominator: 0,
+    // email: "example@example.example",
+    // image: "",
+    // isActive: false,
+    // name: "https://firebasestorage.googleapis.com/v0/b/exchange-of-holiday-apar-45a07.appspot.com/o/image.png?alt=media&token=6eece138-9574-479e-a1c7-cf3316a88eda",
+    // numerator: 0,
+    // personalID: "",
+    // phoneNumber: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingText, setProcessingText] = useState("Processing...");
@@ -160,9 +161,18 @@ export default function HomeScreen({ navigation, route }) {
                     Phone number: {profile.phoneNumber}
                   </Text>
                   <Text style={styles.ProfileDetails}>
-                    Rating:{profile.Rating}
+                    Rating:
+                    {profile.Rating === 0 ? "Not rated yet" : profile.Rating}
                   </Text>
                 </View>
+                <ReviewsBox
+                  array={profile.ratedBy}
+                  navigation={navigation}
+                  toClose={() => {
+                    setModalVisible(false);
+                  }}
+                />
+
                 <View style={styles.profilePressableButtonsView}>
                   <TouchableOpacity
                     style={styles.profilePressableButtons}
@@ -172,11 +182,7 @@ export default function HomeScreen({ navigation, route }) {
                         setProcessingText("Signing out...");
                         setIsProcessing(true);
 
-                        signOutUser()
-                          .then(() => {
-                            navigation.replace("StartScreen");
-                          })
-                          .catch((error) => alert(error.message));
+                        signOutUser();
                       });
                     }}
                   >
@@ -242,12 +248,12 @@ export default function HomeScreen({ navigation, route }) {
             <Button
               mode="contained"
               onPress={() => navigation.navigate("AvailableApartments")}
-              title="Show Available Apartments"
+              title="Available Apartments Map"
             />
             <Button
               mode="contained"
               onPress={() => navigation.navigate("MyBookings")}
-              title="Show My Bookings"
+              title="My Bookings"
             />
             <Button
               mode="contained"
@@ -256,13 +262,13 @@ export default function HomeScreen({ navigation, route }) {
                   paramKey: profile,
                 })
               }
-              title=" Add My Apartment"
+              title="My Apartments"
             />
 
             <Button
               mode="contained"
               onPress={() => navigation.navigate("Chat")}
-              title="Open Chat"
+              title="Chat"
             />
           </View>
           <paper.Modal visible={isProcessing}>
@@ -346,18 +352,18 @@ export default function HomeScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   profileIconContainer: {
     position: "absolute",
-    top: 60,
-    left: 8,
-    width: 50,
-    height: 50,
+    top: 40,
+    left: 10,
+    width: 70,
+    height: 70,
     zIndex: 1,
   },
   profileIcon: {
     borderWidth: 2,
     borderColor: theme.colors.primary,
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    borderRadius: 35,
+    width: 70,
+    height: 70,
   },
   HeddinScreeen: {
     flex: 1,
@@ -399,9 +405,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   ProfileDetails: {
-    marginVertical: 3,
+    marginVertical: 2,
     textAlignVertical: "center",
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "bold",
   },
   buttonContainer: {

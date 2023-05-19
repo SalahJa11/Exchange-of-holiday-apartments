@@ -2,7 +2,7 @@
   "expo": {
     "name": "Apartment Exchange",
     "slug": "Apartment-Exchange",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -17,7 +17,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.salahja.ApartmentExchange"
     },
     "android": {
       "adaptiveIcon": {
@@ -39,7 +40,8 @@
         "projectId": "52d6fd55-6fa9-4915-8541-fd71f9ef2cd3"
       }
     }
-  },"plugins": [
+  },
+  "plugins": [
     [
       "expo-image-picker",
       {
