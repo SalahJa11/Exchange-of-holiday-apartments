@@ -55,13 +55,16 @@ export default function ReviewsBox({ array, navigation, toClose }) {
               style={{
                 width: 50,
                 height: 50,
-                borderRadius: 25,
-                borderWidth: 2,
-                borderColor: theme.colors.primaryBorder,
               }}
             >
               <Image
-                style={{ width: 50, height: 50, borderRadius: 25 }}
+                style={{
+                  borderColor: theme.colors.primaryBorder,
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  borderWidth: 2,
+                }}
                 source={
                   rate.image == ""
                     ? require("../assets/profile.png")

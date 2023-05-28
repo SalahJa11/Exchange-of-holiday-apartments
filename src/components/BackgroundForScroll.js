@@ -5,7 +5,8 @@ import { theme } from "../core/theme";
 const BackgroundForScroll = ({ children }) => {
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : ""}
+      // behavior={Platform.OS === "ios" ? "padding" : ""}
+      behavior={"padding"}
       style={styles.backgroundContainer}
     >
       <View style={styles.backgroundContentContainer}>{children}</View>

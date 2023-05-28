@@ -818,6 +818,24 @@ export async function signOutUser() {
       throw Error(error.message);
     });
 }
+export async function getAllUsers() {
+  const user = auth.currentUser;
+  const Id = user.uid;
+  let finalResult = [];
+  try {
+    const q = query(collection(db, "users"));
+    const querySnapshot = await getDocs(q);
+    console.log("querySnapshot = ", querySnapshot);
+    querySnapshot.forEach((doc) => {
+      let userId = doc.id;
+      console.log(doc.id, " => ", doc.data());
+      if (userId !== Id) finalResult.push({ ...doc.data(), id: userId });
+    });
+    return finalResult;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
 export async function uploadProfileImageToDatabase(id, image) {
   let extention = /[.]/.exec(image);
   const storageRef = ref(storage, `images/${id}`);

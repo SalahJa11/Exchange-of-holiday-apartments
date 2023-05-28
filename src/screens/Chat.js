@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from "react";
 import Background from "../components/Background";
 // import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
-import { StyleSheet, Text, View, ScrollView, TextInput } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import BackButton from "../components/BackButton";
 import { getChatId, getChatingWithPeople, getMyEmail } from "../config/cloud";
 import Error from "../components/Error";
-import { TouchableOpacity } from "react-native-gesture-handler";
 import { Avatar } from "react-native-elements";
 import { theme } from "../core/theme";
+import { useIsFocused } from "@react-navigation/native";
 export default function Chat({ navigation }) {
+  const isFocused = useIsFocused();
+
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorTitle, setErrorTitle] = useState("ErrorTitle");
   const [errorContent, setErrorContent] = useState("Error");
@@ -21,9 +30,9 @@ export default function Chat({ navigation }) {
   const [tempChats, setTempChats] = useState([]);
   const [search, setSearch] = useState("");
   useEffect(() => {
-    fetchData();
+    if (isFocused) fetchData();
     // setIsProcessing(false);
-  }, []);
+  }, [isFocused]);
   async function fetchData() {
     // setIsProcessing(true);
     await getChatingWithPeople()
@@ -119,7 +128,26 @@ export default function Chat({ navigation }) {
 
       {/*start your code here*/}
       {/* <Text>its Chating page start your code here{JSON.stringify(chats)}</Text> */}
-
+      <TouchableOpacity
+        activeOpacity={0.7}
+        style={styles.plusSignOpView}
+        onPress={() =>
+          navigation.navigate("SearchUsersAndApartments", {
+            type: "users",
+          })
+        }
+      >
+        <Text
+          style={{
+            fontSize: 40,
+            color: "white",
+            textAlign: "center",
+            textAlignVertical: "center",
+          }}
+        >
+          +
+        </Text>
+      </TouchableOpacity>
       <TextInput
         style={styles.textInputStyle}
         onChangeText={(text) => searchFilterFunction(text)}
@@ -151,5 +179,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     margin: 5,
     backgroundColor: "white",
+  },
+  plusSignOpView: {
+    position: "absolute",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    right: 30,
+    bottom: 30,
+    zIndex: 1,
   },
 });

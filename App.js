@@ -22,6 +22,7 @@ import {
   OwnerDetails,
   Chating,
   Rating,
+  SearchUsersAndApartments,
 } from "./src/screens";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -99,6 +100,10 @@ export default function App() {
           component={OwnerDetails}
         />
         <Stack.Screen name="Chating" component={Chating} />
+        <Stack.Screen
+          name="SearchUsersAndApartments"
+          component={SearchUsersAndApartments}
+        />
         <Stack.Screen name="Rating" component={Rating} />
       </Stack.Navigator>
     );

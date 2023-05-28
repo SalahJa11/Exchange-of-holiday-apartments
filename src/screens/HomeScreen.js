@@ -245,11 +245,44 @@ export default function HomeScreen({ navigation, route }) {
           </SafeAreaView> */}
             {/* all the button  */}
             <Logo />
-            <Button
-              mode="contained"
-              onPress={() => navigation.navigate("AvailableApartments")}
-              title="Available Apartments Map"
-            />
+            <View
+              style={{
+                borderWidth: 2,
+                borderColor: theme.colors.primaryBorder,
+                padding: 12,
+                borderRadius: 10,
+              }}
+            >
+              <Text
+                style={{
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                  fontWeight: "bold",
+                  fontSize: 20,
+                }}
+              >
+                Available apartments
+              </Text>
+              <View style={{ flexDirection: "row", width: "100%" }}>
+                <Button
+                  style={{ flex: 1 }}
+                  mode="contained"
+                  onPress={() => navigation.navigate("AvailableApartments")}
+                  title="Map"
+                />
+                <View style={{ flex: 0.1 }}></View>
+                <Button
+                  style={{ flex: 1 }}
+                  mode="contained"
+                  onPress={() =>
+                    navigation.navigate("SearchUsersAndApartments", {
+                      type: "apartments",
+                    })
+                  }
+                  title="List"
+                />
+              </View>
+            </View>
             <Button
               mode="contained"
               onPress={() => navigation.navigate("MyBookings")}
