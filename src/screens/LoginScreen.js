@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation, setUser }) {
     await logIn(email.value, password.value)
       .then(async () => {
         const user = auth.currentUser;
-        console.log("user = > ", user.emailVerified, user);
+        // console.log("user = > ", user.emailVerified, user);
         if (user.emailVerified) {
           // navigation.reset();
           // typeof setUser === "function" ? setUser(user) : undefined;

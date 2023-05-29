@@ -14,3 +14,4 @@ export { default as ProfileUpdate } from "./ProfileUpdate";
 export { default as OwnerDetails } from "./OwnerDetails";
 export { default as Chating } from "./Chating";
 export { default as Rating } from "./Rating";
+export { default as SearchUsersAndApartments } from "./SearchUsersAndApartments";

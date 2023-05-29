@@ -15,7 +15,15 @@ import {
   orderBy,
   onSnapshot,
 } from "firebase/firestore";
-import { StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import {
   Bubble,
   GiftedChat,
@@ -180,19 +188,22 @@ export default function Chating({ navigation, route }) {
     );
   };
   return (
-    <GiftedChat
-      messages={messages}
-      showAvatarForEveryMessage={false}
-      onSend={(messages) => onSend(messages)}
-      renderInputToolbar={(props) => customtInputToolbar(props)}
-      renderSystemMessage={(props) => customSystemMessage(props)}
-      renderBubble={renderBubble}
-      user={{
-        _id: getMyEmail(),
-        name: profile.name,
-        avatar: profile.image,
-      }}
-    />
+    <>
+      <GiftedChat
+        messages={messages}
+        showAvatarForEveryMessage={false}
+        onSend={(messages) => onSend(messages)}
+        renderInputToolbar={(props) => customtInputToolbar(props)}
+        renderSystemMessage={(props) => customSystemMessage(props)}
+        renderBubble={renderBubble}
+        user={{
+          _id: getMyEmail(),
+          name: profile.name,
+          avatar: profile.image,
+        }}
+      />
+      {Platform.OS === "android" && <KeyboardAvoidingView behavior="padding" />}
+    </>
   );
 }
 const styles = StyleSheet.create({});

@@ -2,9 +2,9 @@
   "expo": {
     "name": "Apartment Exchange",
     "slug": "Apartment-Exchange",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/LargeBGLogo.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -28,9 +28,12 @@
       "package": "com.salahja.ApartmentExchange",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyBpUs36r5kav0hJYAcu8S9CH2axs1RT5zA"
+          "apiKey": "AIzaSyDUtXnpzsoJyle-FQh6CktAC-C-r_rFfT0"
         }
       }
+    },
+    "androidStatusBar": {
+      "translucent": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

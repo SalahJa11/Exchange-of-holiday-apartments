@@ -111,6 +111,10 @@ export default function AvailableApartments({ navigation }) {
       let finalResult = [];
 
       apartments.forEach((apartment, index) => {
+        let name = "";
+        if (apartment.Name !== "") name = apartment.Name.slice(0, 15);
+        else name = "Not named";
+        console.log("name = ", name);
         let temp = (
           <Marker
             key={index}
@@ -119,7 +123,7 @@ export default function AvailableApartments({ navigation }) {
               latitude: apartment.Location[0],
               longitude: apartment.Location[1],
             }}
-            title={apartment.Name.slice(0, 15)}
+            title={name}
             description={"Press for more info"}
             onCalloutPress={() => {
               navigation.navigate("ApartmentInfo", {
@@ -138,7 +142,7 @@ export default function AvailableApartments({ navigation }) {
               >
                 <View style={{ alignItems: "center" }}>
                   <Text style={{ fontSize: 12, fontWeight: "bold" }}>
-                    {apartment.Name.slice(0, 15)}
+                    {name}
                   </Text>
                   <Text style={{ fontSize: 11 }}>Press for more info</Text>
                 </View>

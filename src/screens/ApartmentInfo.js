@@ -423,7 +423,8 @@ export default function ApartmentInfo({ navigation, route }) {
               {apartment.Belcony ? "Belcony: exist" : "No belcony"}
             </Text>
             <Text style={styles.ProfileDetails}>
-              Rating: ({apartment.Rating})
+              Rating:{" "}
+              {apartment.Rating === 0 ? "Not rated yet" : apartment.Rating}
             </Text>
           </View>
           {apartment.Description !== "" && (
