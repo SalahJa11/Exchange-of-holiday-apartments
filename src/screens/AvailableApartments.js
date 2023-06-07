@@ -22,6 +22,9 @@ import TextInput from "../components/TextInput";
 import { theme } from "../core/theme";
 import { numberValidatorAndEmpty } from "../helpers/numberValidatorAndEmpty";
 import Error from "../components/Error";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { fixDate, googleDateToJavaDate } from "../helpers/DateFunctions";
+
 export default function AvailableApartments({ navigation }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [rooms, setRooms] = useState({ value: "", value2: "", error: "" });
@@ -50,6 +53,11 @@ export default function AvailableApartments({ navigation }) {
     value: "",
     error: "",
   });
+  const [fromDate, setFromDate] = useState(new Date().getTime());
+  const [toDate, setToDate] = useState(new Date().getTime());
+  const [showPicker, setShowPicker] = useState(false);
+  const [showPicker2, setShowPicker2] = useState(false);
+  const [filterDate, setFilterDate] = useState(false);
   const [checked, setChecked] = useState(false);
   const [apartmentsTemp, setApartmentsTemp] = useState([]);
   const [filtered, setFiltered] = useState(false);
@@ -192,6 +200,18 @@ export default function AvailableApartments({ navigation }) {
       value: "",
       error: "",
     });
+    setFilterDate(false);
+    setChecked(false);
+  }
+  function isInsideDate(apartment) {
+    let apartmentFromTime = new Date(
+      googleDateToJavaDate(apartment.FromDate)
+    ).setHours(0, 0, 0, 0);
+    let apartmentToTime = new Date(
+      googleDateToJavaDate(apartment.ToDate)
+    ).setHours(23, 59, 59, 999);
+    if (apartmentFromTime <= fromDate && toDate <= apartmentToTime) return true;
+    return false;
   }
   function isBetween(str1, strbetween, str2) {
     let between = parseInt(strbetween);
@@ -208,7 +228,21 @@ export default function AvailableApartments({ navigation }) {
       return false;
     if (!isBetween(kitchens.value, value.Kitchens, kitchensTo.value))
       return false;
-    if (value.Belcony != checked) return false;
+    if (checked === true && value.Belcony !== checked) return false;
+    if (filterDate === true && !isInsideDate(value)) return false;
+    return true;
+  }
+  function checkEmptyFilter() {
+    if (rooms.value !== "") return false;
+    if (bedrooms.value !== "") return false;
+    if (bathrooms.value !== "") return false;
+    if (kitchens.value !== "") return false;
+    if (roomsTo.value !== "") return false;
+    if (bedroomsTo.value !== "") return false;
+    if (bathroomsTo.value !== "") return false;
+    if (kitchensTo.value !== "") return false;
+    if (checked) return false;
+    if (filterDate) return false;
     return true;
   }
   const handleFiltering = () => {
@@ -265,10 +299,26 @@ export default function AvailableApartments({ navigation }) {
       return;
     }
     setApartments([...apartmentsTemp].filter(filterArray));
+
     setFiltered(true);
+    if (checkEmptyFilter()) setFiltered(false);
     setIsModalVisible(false);
     // setIndx
   };
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate;
+    if (showPicker) {
+      setFromDate(new Date(currentDate).getTime());
+      if (new Date(currentDate).getTime() > new Date(toDate).getTime()) {
+        setToDate(new Date(currentDate).getTime());
+      }
+    } else if (showPicker2) {
+      setToDate(new Date(currentDate).getTime());
+    }
+    setShowPicker(false);
+    setShowPicker2(false);
+  };
+
   const write = () => {
     return (
       <View style={{ width: "100%" }}>
@@ -406,6 +456,86 @@ export default function AvailableApartments({ navigation }) {
             </View>
           </View>
         </View>
+        <View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text style={styles.filterBoxTitle}>Filter by date?</Text>
+            <Checkbox
+              style={{ alignSelf: "center" }}
+              status={filterDate ? "checked" : "unchecked"}
+              onPress={() => {
+                setFilterDate(!filterDate);
+              }}
+            />
+          </View>
+          {filterDate && (
+            <View style={{ flexDirection: "row" }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowPicker(true);
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: theme.colors.primaryBackground,
+                  borderWidth: 1,
+                  borderColor: theme.colors.primaryBorder,
+                }}
+              >
+                <Text
+                  style={{ textAlign: "center", textAlignVertical: "center" }}
+                >
+                  From
+                </Text>
+                <Text
+                  style={{ textAlign: "center", textAlignVertical: "center" }}
+                >
+                  {fixDate(fromDate)}
+                </Text>
+              </TouchableOpacity>
+              <View style={{ flex: 0.1 }}></View>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log("count");
+                  setShowPicker2(true);
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: theme.colors.primaryBackground,
+                  borderWidth: 1,
+                  borderColor: theme.colors.primaryBorder,
+                }}
+              >
+                <View></View>
+                <Text style={{ textAlign: "center" }}>To</Text>
+                <Text
+                  style={{ textAlign: "center", textAlignVertical: "center" }}
+                >
+                  {fixDate(toDate)}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <DateTimePickerModal
+            isVisible={showPicker2 || showPicker}
+            mode="date"
+            minimumDate={
+              showPicker2
+                ? new Date(fromDate)
+                : showPicker
+                ? new Date()
+                : new Date()
+            }
+            onConfirm={(date) => handleDateChange(null, date)}
+            onCancel={() => {
+              setShowPicker2(false);
+              setShowPicker(false);
+            }}
+          />
+        </View>
         <View
           style={{
             flexDirection: "row",
@@ -441,10 +571,11 @@ export default function AvailableApartments({ navigation }) {
               <TouchableOpacity
                 style={{
                   alignSelf: "center",
-                  backgroundColor: "#fd0000",
-                  width: "90%",
+                  backgroundColor: theme.colors.primaryBorder,
+                  width: "100%",
                   height: 40,
                   justifyContent: "center",
+                  borderRadius: 5,
                 }}
                 onPress={() => {
                   setApartments(apartmentsTemp);
