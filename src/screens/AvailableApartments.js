@@ -287,6 +287,7 @@ export default function AvailableApartments({ navigation }) {
                 keyboardType="numeric"
               />
             </View>
+            <View style={{ flex: 0.1 }}></View>
             <View style={{ flex: 1 }}>
               <TextInput
                 label="To"
@@ -316,6 +317,7 @@ export default function AvailableApartments({ navigation }) {
                 keyboardType="numeric"
               />
             </View>
+            <View style={{ flex: 0.1 }}></View>
             <View style={{ flex: 1 }}>
               <TextInput
                 label="To"
@@ -352,6 +354,7 @@ export default function AvailableApartments({ navigation }) {
                 keyboardType="numeric"
               />
             </View>
+            <View style={{ flex: 0.1 }}></View>
             <View style={{ flex: 1 }}>
               <TextInput
                 label="To"
@@ -386,6 +389,7 @@ export default function AvailableApartments({ navigation }) {
                 keyboardType="numeric"
               />
             </View>
+            <View style={{ flex: 0.1 }}></View>
             <View style={{ flex: 1 }}>
               <TextInput
                 label="To"

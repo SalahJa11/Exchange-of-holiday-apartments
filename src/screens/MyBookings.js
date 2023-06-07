@@ -195,7 +195,11 @@ export default function MyBookings({ navigation }) {
       const res2 = await getValidApartmentById(bookings[index]._id2Apartment);
       console.log("getValidApartmentById = ", res2);
       setApartment2({ ...res2 });
-      if (!bookings[index].byMoney) {
+      if (
+        !bookings[index].byMoney ||
+        (bookings[index].hasOwnProperty("form") &&
+          bookings[index].form === "apartmentcash")
+      ) {
         const res3 = await getValidApartmentById(bookings[index]._id1Apartment);
         console.log("getValidApartmentById = ", res3);
         setApartment1({ ...res3 });
@@ -566,9 +570,123 @@ export default function MyBookings({ navigation }) {
   };
 
   function oneBookingSide(id = 1) {
+    bookings[index].hasOwnProperty("form")
+      ? console.log("form === ", bookings[index].form)
+      : null;
     // let mine = <View></View>;
     if (id == 1) {
-      console.log("bookings[index].byMoney", index, bookings[index].byMoney);
+      // console.log("bookings[index].byMoney", index, bookings[index].byMoney);
+      if (
+        bookings[index].hasOwnProperty("form") &&
+        bookings[index].form === "apartmentcash"
+      ) {
+        return (
+          <View
+            style={{ width: "100%", width: "100%", aspectRatio: 1 }}
+            onLongPress={() => {
+              setModalVisible(false);
+              navigation.push("ApartmentInfo", {
+                paramKey: apartment1,
+              });
+            }}
+          >
+            <View
+              style={{
+                width: "100%",
+                aspectRatio: 1,
+              }}
+            >
+              <View
+                style={{
+                  margin: 5,
+                  width: "100%",
+                  height: 80,
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  padding: 5,
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    textAlignVertical: "center",
+                    // backgroundColor: "black",
+                    // opacity: 0.75,
+                    fontSize: 15,
+                    color: "black",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {myId == bookings[index]._id1
+                    ? "My offer : (" + bookings[index].Money + ")  Shekels"
+                    : "Offered cash : (" + bookings[index].Money + ")  Shekels"}
+                </Text>
+                <Image
+                  style={{ height: "100%", aspectRatio: 1 }}
+                  source={require("../assets/coins.png")}
+                  resizeMode="contain"
+                />
+              </View>
+              <Image
+                style={{ flex: 1, width: "100%" }}
+                source={
+                  bookings[index]._id1ApartmentImage != ""
+                    ? {
+                        uri: bookings[index]._id1ApartmentImage,
+                      }
+                    : require("../assets/image.png")
+                }
+                resizeMode="contain"
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  width: "100%",
+                  height: 35,
+                  backgroundColor: "black",
+                  opacity: 0.75,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    alignSelf: "center",
+                  }}
+                >
+                  {myId == bookings[index]._id1
+                    ? "My apartment"
+                    : "Other apartment"}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(false);
+                  navigation.push("ApartmentInfo", {
+                    paramKey: apartment1,
+                  });
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  width: 35,
+                  height: 35,
+                }}
+              >
+                <Image
+                  style={{ height: 35, aspectRatio: 1 }}
+                  source={require("../assets/link.png")}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+      }
       if (bookings[index].byMoney) {
         return (
           <View
@@ -995,6 +1113,56 @@ export default function MyBookings({ navigation }) {
   //     setSearch(text);
   //   }
   // };
+  const smallWindowForCard = (element) => {
+    if (element.byMoney === true) {
+      return (
+        <View
+          style={{
+            alignItems: "center",
+            height: "100%",
+            justifyContent: "space-around",
+          }}
+        >
+          <View style={{ alignItems: "center" }}>
+            <Text style={{ fontWeight: "bold" }}>Money Amount</Text>
+            <Text style={{ fontWeight: "bold" }}>{element.Money}</Text>
+          </View>
+
+          <Image
+            source={require("../assets/coins.png")}
+            style={{
+              height: 66,
+              width: "100%",
+            }}
+            resizeMode="contain"
+          />
+        </View>
+      );
+    }
+    if (element.byMoney === false) {
+      return (
+        <View
+          style={{
+            height: "100%",
+            width: "100%",
+            borderWidth: 2,
+          }}
+        >
+          <Image
+            style={{ height: "100%", width: "100%" }}
+            source={
+              element._id1ApartmentImage != ""
+                ? {
+                    uri: element._id1ApartmentImage,
+                  }
+                : require("../assets/image.png")
+            }
+            resizeMode="cover"
+          />
+        </View>
+      );
+    }
+  };
   const everyBookingCard = () => {
     let res = [];
     bookings.forEach((element, index) => {
@@ -1096,48 +1264,27 @@ export default function MyBookings({ navigation }) {
             </View>
 
             <View style={{ height: 150, width: "40%" }}>
-              {element.byMoney == true && (
-                <View
-                  style={{
-                    alignItems: "center",
-                    height: "100%",
-                    justifyContent: "space-around",
-                  }}
-                >
+              {bookings[index].hasOwnProperty("form") &&
+              bookings[index].form === "apartmentcash" ? (
+                <View style={{ height: "100%", width: "100%", borderWidth: 2 }}>
                   <View style={{ alignItems: "center" }}>
-                    <Text style={{ fontWeight: "bold" }}>Money Amount</Text>
-                    <Text style={{ fontWeight: "bold" }}>{element.Money}</Text>
+                    <Text style={{ fontWeight: "bold" }}>
+                      Money Amount: {element.Money}
+                    </Text>
                   </View>
+
                   <Image
-                    source={require("../assets/coins.png")}
-                    style={{
-                      height: 66,
-                      width: "100%",
-                    }}
-                    resizeMode="contain"
-                  />
-                </View>
-              )}
-              {element.byMoney == false && (
-                <View
-                  style={{
-                    height: "100%",
-                    width: "100%",
-                    borderWidth: 2,
-                  }}
-                >
-                  <Image
-                    style={{ height: "100%", width: "100%" }}
+                    style={{ flex: 1, width: "100%" }}
                     source={
                       element._id1ApartmentImage != ""
-                        ? {
-                            uri: element._id1ApartmentImage,
-                          }
+                        ? { uri: element._id1ApartmentImage }
                         : require("../assets/image.png")
                     }
                     resizeMode="cover"
                   />
                 </View>
+              ) : (
+                smallWindowForCard(element)
               )}
             </View>
           </View>
