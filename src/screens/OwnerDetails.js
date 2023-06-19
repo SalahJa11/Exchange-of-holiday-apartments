@@ -253,30 +253,6 @@ export default function OwnerDetails({ navigation, route }) {
             <Text style={{ color: "black", fontSize: 24 }}>{profile.name}</Text>
           </View>
         </View>
-        {getMyId() !== profile.id && (
-          <TouchableOpacity
-            style={{
-              // width: "100%",
-              height: 50,
-              flexDirection: "row",
-              justifyContent: "space-around",
-              alignItems: "center",
-              alignSelf: "center",
-              // borderWidth: 1,
-              padding: 2,
-              marginTop: 3,
-
-              backgroundColor: theme.colors.primaryBackground,
-              borderRadius: 5,
-            }}
-          >
-            <Text style={{ fontSize: 17 }}>Chat</Text>
-            <Image
-              source={require("../assets/message.png")}
-              style={{ height: 40, aspectRatio: 1 }}
-            />
-          </TouchableOpacity>
-        )}
         <View style={styles.DetailsContainer}>
           {/* <Text style={styles.ProfileDetails}>Id: {profile.personalID}</Text> */}
           <Text style={styles.ProfileDetails}>Email: {profile.email}</Text>
