@@ -1,9 +1,9 @@
 {
-  "expoServerNgrokUrl": null,
-  "packagerNgrokUrl": null,
-  "ngrokPid": null,
-  "expoServerPort": null,
-  "packagerPort": null,
+  "expoServerNgrokUrl": "https://ke-yht.salahja.final-project.exp.direct",
+  "packagerNgrokUrl": "https://ke-yht.salahja.final-project.exp.direct",
+  "ngrokPid": 14904,
+  "expoServerPort": 19000,
+  "packagerPort": 19000,
   "packagerPid": null,
   "webpackServerPort": null
 }

@@ -214,6 +214,8 @@ export default function AvailableApartments({ navigation }) {
     return false;
   }
   function isBetween(str1, strbetween, str2) {
+    console.log("(str1, strbetween, str2)", str1, ",", strbetween, ",", str2);
+    if (strbetween === "") return true;
     let between = parseInt(strbetween);
     if (str1 === "" && str2 === "") return true;
     if (str1 === "" && str2 !== "") return between <= parseInt(str2);

@@ -191,7 +191,7 @@ export default function MyBookings({ navigation }) {
     try {
       const res = await getApartmentOwner(tempId);
       console.log("getApartmentOwner = ", res);
-      setProfile2({ ...res });
+      setProfile2({ ...res, id: tempId });
       const res2 = await getValidApartmentById(bookings[index]._id2Apartment);
       console.log("getValidApartmentById = ", res2);
       setApartment2({ ...res2 });
@@ -987,7 +987,7 @@ export default function MyBookings({ navigation }) {
             style={styles.headerContent}
             onPress={() => {
               setModalVisible(false);
-              navigation.navigate("OwnerDetails", {
+              navigation.push("OwnerDetails", {
                 paramKey: profile2,
               });
             }}

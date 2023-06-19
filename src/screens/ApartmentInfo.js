@@ -117,7 +117,7 @@ export default function ApartmentInfo({ navigation, route }) {
           <TouchableOpacity
             style={{ marginRight: 20 }}
             onPress={() => {
-              navigation.navigate("OwnerDetails", {
+              navigation.push("OwnerDetails", {
                 paramKey: owner,
               });
             }}
@@ -143,8 +143,8 @@ export default function ApartmentInfo({ navigation, route }) {
       console.log("ownerId = ", route.params?.paramKey.Owner);
       const res = await getApartmentOwner(route.params?.paramKey.Owner).then(
         (temp) => {
-          setOwner({ ...temp });
-          styleHeader(temp);
+          setOwner({ ...temp, id: route.params?.paramKey.Owner });
+          styleHeader({ ...temp, id: route.params?.paramKey.Owner });
         }
       );
 

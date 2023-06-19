@@ -420,6 +420,7 @@ export function getApartmentChatId(otherApartmentId) {
 export async function startAChat(otherUserId) {
   const user = auth.currentUser;
   const Id = user.uid;
+  if (otherUserId == undefined) throw new Error("Invalid user");
   let newChatId = getChatId(otherUserId);
   const UserProfile = await getUserData();
   if (UserProfile.chatsId.includes(newChatId)) return newChatId;
@@ -485,7 +486,7 @@ export async function getAllListedApartments() {
     );
 
     const querySnapshot = await getDocs(q);
-    console.log("querySnapshot = ", querySnapshot);
+    // console.log("querySnapshot = ", querySnapshot);
     querySnapshot.forEach((doc) => {
       let apartmentId = doc.id;
       console.log(doc.id, " => ", doc.data());
