@@ -343,14 +343,16 @@ export async function StartABooking(
   myApartmentImage,
   moneyAmount,
   fromDate,
-  toDate
+  toDate,
+  form
 ) {
   const user = auth.currentUser;
   const Id = user.uid;
   let result = Id.localeCompare(ownerId);
+  console.log("form  = ", form);
   if (result == 0) throw new Error("Cant make a booking with yourself");
-  if (isMoney) myApartmentId = "";
-  else moneyAmount = "0";
+  if (form === "cash") myApartmentId = "";
+  else if (form === "apartment") moneyAmount = "0";
   try {
     const Valid = await isValidBooking(ownerId, ownerApartment, myApartmentId);
     if (!Valid) {
@@ -380,6 +382,7 @@ export async function StartABooking(
       confirmed: false,
       cancelled: false,
       toDelete: false,
+      form: form,
     });
     let docId = docRef.id;
     console.log("Document written with ID: ", docRef.id);
@@ -417,6 +420,7 @@ export function getApartmentChatId(otherApartmentId) {
 export async function startAChat(otherUserId) {
   const user = auth.currentUser;
   const Id = user.uid;
+  if (otherUserId == undefined) throw new Error("Invalid user");
   let newChatId = getChatId(otherUserId);
   const UserProfile = await getUserData();
   if (UserProfile.chatsId.includes(newChatId)) return newChatId;
@@ -482,7 +486,7 @@ export async function getAllListedApartments() {
     );
 
     const querySnapshot = await getDocs(q);
-    console.log("querySnapshot = ", querySnapshot);
+    // console.log("querySnapshot = ", querySnapshot);
     querySnapshot.forEach((doc) => {
       let apartmentId = doc.id;
       console.log(doc.id, " => ", doc.data());

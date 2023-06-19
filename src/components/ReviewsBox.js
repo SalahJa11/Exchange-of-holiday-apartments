@@ -163,7 +163,7 @@ export default function ReviewsBox({ array, navigation, toClose }) {
                       setIsProcessing(false);
                       typeof toClose === "function" ? toClose() : undefined;
                       navigation.push("OwnerDetails", {
-                        paramKey: temp,
+                        paramKey: { ...temp, id: comment.id },
                       });
                     });
                   }}

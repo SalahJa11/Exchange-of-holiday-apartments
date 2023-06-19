@@ -83,7 +83,7 @@ export default function Chating({ navigation, route }) {
           <TouchableOpacity
             style={{ marginLeft: 20 }}
             onPress={() => {
-              navigation.navigate("OwnerDetails", {
+              navigation.push("OwnerDetails", {
                 paramKey: route.params?.paramKeyProfile,
               });
             }}
@@ -202,7 +202,7 @@ export default function Chating({ navigation, route }) {
           avatar: profile.image,
         }}
       />
-      {Platform.OS === "android" && <KeyboardAvoidingView behavior="padding" />}
+      {Platform.OS === "android" && <KeyboardAvoidingView behavior="height" />}
     </>
   );
 }

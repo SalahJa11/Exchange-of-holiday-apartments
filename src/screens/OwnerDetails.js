@@ -18,7 +18,12 @@ import { theme } from "../core/theme";
 import { nameValidator } from "../helpers/nameValidator";
 import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
 import { idValidator } from "../helpers/idValidator";
-import { getOwnerListedApartments } from "../config/cloud";
+import {
+  getChatId,
+  getMyId,
+  getOwnerListedApartments,
+  startAChat,
+} from "../config/cloud";
 import * as ImagePicker from "expo-image-picker";
 import { googleDateToJavaDate } from "../helpers/DateFunctions";
 import FlashMessage, { showMessage } from "react-native-flash-message";
@@ -35,7 +40,12 @@ export default function OwnerDetails({ navigation, route }) {
   const [noteContent, setNoteContent] = useState("Done");
   const [profile, setProfile] = useState(route.params?.paramKey);
   const [apartments, setApartments] = useState([]);
-
+  console.log(
+    route.params?.paramKey.Owner,
+    "===",
+    getMyId(),
+    route.params?.paramKey
+  );
   const toCloseError = () => {
     typeof setErrorVisible === "function" ? setErrorVisible(false) : null;
     typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
@@ -72,12 +82,12 @@ export default function OwnerDetails({ navigation, route }) {
   const styleHeader = (owner) => {
     navigation.setOptions({
       headerRight: () => (
-        <View style={{ flexDirection: "row" }}>
+        <View style={{ flexDirection: "row", marginRight: 15 }}>
           {/* <Text style={{ textAlignVertical: "center" }}>
             {owner.name.slice(0, 15)}
           </Text> */}
           <TouchableOpacity
-            style={{ marginRight: 20, width: 30, height: 30 }}
+            style={{ width: 30, height: 30, marginRight: 3 }}
             onPress={() => {
               showMessage(TOAST.OwnerDetails);
             }}
@@ -89,6 +99,26 @@ export default function OwnerDetails({ navigation, route }) {
               source={require("../assets/help2.png")}
             />
           </TouchableOpacity>
+          {getMyId() !== profile.id && profile.id != undefined && (
+            <TouchableOpacity
+              onPress={async () => {
+                await startAChat(profile.id).then((newChatId) => {
+                  navigation.navigate("Chating", {
+                    paramKey: getChatId(profile.id),
+                    paramKeyEmail: profile.email,
+                    paramKeyImage: profile.image,
+                    paramKeyProfile: profile,
+                    paramKeyName: profile.name,
+                  });
+                });
+              }}
+            >
+              <Image
+                source={require("../assets/message.png")}
+                style={{ height: 30, width: 30, tintColor: "white" }}
+              />
+            </TouchableOpacity>
+          )}
         </View>
       ),
     });

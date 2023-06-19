@@ -20,7 +20,7 @@ import { Avatar } from "react-native-elements";
 import Processing from "../components/Processing";
 
 export default function SearchUsersAndApartments({ navigation, route }) {
-  const type = route.params?.type;
+  const [type, setType] = useState(route.params?.type);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorTitle, setErrorTitle] = useState("ErrorTitle");
   const [errorContent, setErrorContent] = useState("error");
@@ -33,23 +33,19 @@ export default function SearchUsersAndApartments({ navigation, route }) {
     typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
-  const styleHeader = (title) => {
-    navigation.setOptions({
-      title: title,
-    });
-  };
-  if (type === "users") {
-    styleHeader("New conversation");
-  }
-  if (type === "apartments") {
-    styleHeader("Available apartments");
-  }
+
   useEffect(() => {
-    // setIsProcessing(true);
-
+    if (type === "users") {
+      navigation.setOptions({
+        title: "New conversation",
+      });
+    }
+    if (type === "apartments") {
+      navigation.setOptions({
+        title: "Available apartments",
+      });
+    }
     fetchData();
-
-    // setIsProcessing(false);
   }, []);
   async function fetchData() {
     setIsProcessing(true);
@@ -173,11 +169,9 @@ export default function SearchUsersAndApartments({ navigation, route }) {
   };
   const listAll = () => {
     if (type === "users") {
-      styleHeader("New conversation");
       return listChatUsers();
     }
     if (type === "apartments") {
-      styleHeader("Available apartments");
       return listApartments();
     }
     return;

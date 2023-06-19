@@ -117,7 +117,7 @@ export default function ApartmentInfo({ navigation, route }) {
           <TouchableOpacity
             style={{ marginRight: 20 }}
             onPress={() => {
-              navigation.navigate("OwnerDetails", {
+              navigation.push("OwnerDetails", {
                 paramKey: owner,
               });
             }}
@@ -143,8 +143,8 @@ export default function ApartmentInfo({ navigation, route }) {
       console.log("ownerId = ", route.params?.paramKey.Owner);
       const res = await getApartmentOwner(route.params?.paramKey.Owner).then(
         (temp) => {
-          setOwner({ ...temp });
-          styleHeader(temp);
+          setOwner({ ...temp, id: route.params?.paramKey.Owner });
+          styleHeader({ ...temp, id: route.params?.paramKey.Owner });
         }
       );
 
@@ -279,14 +279,15 @@ export default function ApartmentInfo({ navigation, route }) {
   };
   const handleANewBooking = async (sure = false) => {
     console.log("hi");
-    if (checked == "cash") {
+    if (checked === "cash" || checked === "apartmentcash") {
       const moneyError = numberValidator(money.value);
       console.log("error0");
       if (moneyError) {
         setMoney({ ...money, error: moneyError });
         return;
       }
-    } else {
+    }
+    if (checked === "apartmentcash" || checked === "apartment")
       if (selectedApartment.id == "" || selectedApartment.image == "") {
         console.log("error");
         setModalVisible(false);
@@ -296,7 +297,7 @@ export default function ApartmentInfo({ navigation, route }) {
         setErrorVisible(true);
         return;
       }
-    }
+
     console.log("hi3");
     if (sure) {
       setModalVisible(false);
@@ -306,12 +307,13 @@ export default function ApartmentInfo({ navigation, route }) {
         apartment.Owner,
         apartment.apartmentId,
         apartment.Image,
-        checked == "cash" ? true : false,
+        checked === "cash" || checked === "apartmentcash" ? true : false,
         selectedApartment.id,
         selectedApartment.image,
         money.value,
         selectedApartment.fromDate,
-        selectedApartment.toDate
+        selectedApartment.toDate,
+        checked
       )
         .then(() => {
           setIsProcessing(false);
@@ -599,6 +601,16 @@ export default function ApartmentInfo({ navigation, route }) {
           }}
         >
           <View style={{ flexDirection: "column" }}>
+            <Text
+              style={{
+                fontWeight: "bold",
+                textAlignVertical: "center",
+                textAlign: "center",
+                fontSize: 17,
+              }}
+            >
+              Form of Exchange
+            </Text>
             <View
               style={{
                 flexDirection: "row",
@@ -613,7 +625,7 @@ export default function ApartmentInfo({ navigation, route }) {
                   fontSize: 16,
                 }}
               >
-                By Apartment/House
+                Apartment/House
               </Text>
               <RadioButton
                 //   style={{}}
@@ -636,7 +648,7 @@ export default function ApartmentInfo({ navigation, route }) {
                   fontSize: 16,
                 }}
               >
-                By Cash
+                Cash
               </Text>
               <RadioButton
                 value="house"
@@ -644,8 +656,30 @@ export default function ApartmentInfo({ navigation, route }) {
                 onPress={() => setChecked("cash")}
               />
             </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  textAlignVertical: "center",
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
+                Apartment/House + Cash
+              </Text>
+              <RadioButton
+                value="apartmentcash"
+                status={checked === "apartmentcash" ? "checked" : "unchecked"}
+                onPress={() => setChecked("apartmentcash")}
+              />
+            </View>
           </View>
-          {checked == "apartment" && (
+          {(checked === "apartment" || checked === "apartmentcash") && (
             <>
               {myApartments.length != 0 && (
                 <View
@@ -702,6 +736,8 @@ export default function ApartmentInfo({ navigation, route }) {
               borderColor: theme.colors.primaryBorder,
               flexDirection: "row",
               justifyContent: "space-between",
+              padding: 3,
+              marginTop: 2,
               // borderWidth: 1,
             }}
           >
@@ -770,13 +806,51 @@ export default function ApartmentInfo({ navigation, route }) {
                   resizeMode="contain"
                 />
               )}
+              {checked === "apartmentcash" && (
+                <View
+                  style={{
+                    justifyContent: "space-between",
+                    height: "100%",
+                  }}
+                >
+                  <TextInput
+                    style={{
+                      height: 20,
+                    }}
+                    label="Cash"
+                    value={money.value}
+                    onChangeText={(text) =>
+                      setMoney({ value: text, error: "" })
+                    }
+                    error={!!money.error}
+                    errorText={money.error}
+                    autoCapitalize="none"
+                    keyboardType="numeric"
+                  />
+
+                  <Image
+                    source={
+                      selectedApartment.image != ""
+                        ? {
+                            uri: selectedApartment.image,
+                          }
+                        : require("../assets/image.png")
+                    }
+                    style={{
+                      height: 78,
+                      width: "100%",
+                    }}
+                    resizeMode="contain"
+                  />
+                </View>
+              )}
             </View>
           </View>
           <View>
             <Text
               style={{ fontSize: 20, textAlign: "center", fontWeight: "bold" }}
             >
-              Suggested date
+              Dates
             </Text>
             <View style={{ flexDirection: "row" }}>
               <TouchableOpacity

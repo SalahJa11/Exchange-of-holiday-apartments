@@ -20,6 +20,7 @@ import { phoneNumberValidator } from "../helpers/phoneNumberValidator";
 import { idValidator } from "../helpers/idValidator";
 import { passwordRecoveryEmail, updateUserProfile } from "../config/cloud";
 import * as ImagePicker from "expo-image-picker";
+import BackgroundForScroll from "../components/BackgroundForScroll";
 export default function ProfileUpdate({ navigation, route }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
@@ -120,7 +121,7 @@ export default function ProfileUpdate({ navigation, route }) {
       });
   };
   return (
-    <Background>
+    <BackgroundForScroll>
       {/* <BackButton goBack={navigation.goBack} /> */}
       <ScrollView
         contentContainerStyle={{
@@ -296,7 +297,7 @@ export default function ProfileUpdate({ navigation, route }) {
         }}
       ></Note>
       <Processing visible={isProcessing} content={"Updating..."}></Processing>
-    </Background>
+    </BackgroundForScroll>
   );
 }
 const styles = StyleSheet.create({
