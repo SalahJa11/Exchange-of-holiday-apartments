@@ -154,7 +154,7 @@ export default function LoginScreen({ navigation, setUser }) {
         }}
         secondKey={false}
       ></Note>
-      <Processing visible={isProcessing} content={"Loading..."}></Processing>
+      <Processing visible={isProcessing} content={"Connecting..."}></Processing>
     </BackgroundForScroll>
   );
 }

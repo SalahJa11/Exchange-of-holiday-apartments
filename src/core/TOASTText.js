@@ -26,3 +26,5 @@ export const TOAST = {
     type: "note",
   },
 };
+export const AboutText =
+  "The apartment exchange app revolutionizes temporary stays by facilitating apartment exchanges between users. With features like messaging, ratings, and booking suggestions, it offers a seamless experience for users. Developed by student Salah Jawabreh under the guidance of Dr. Roger Cohen, it serves as the final project for a software engineering bachelor's degree at Azrieli College Jerusalem.";

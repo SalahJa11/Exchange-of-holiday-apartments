@@ -8,12 +8,18 @@ import {
   ScrollView,
   StyleSheet,
   Image,
+  TouchableOpacity,
+  Pressable,
+  Modal,
 } from "react-native";
+import { AboutText } from "../core/TOASTText";
 import Processing from "../components/Processing";
 import Error from "../components/Error";
+import { theme } from "../core/theme";
 export default function StartScreen({ navigation }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [errorTitle, setErrorTitle] = useState("ErrorTitle");
   const [errorContent, setErrorContent] = useState("error");
   const toCloseError = () => {
@@ -21,7 +27,49 @@ export default function StartScreen({ navigation }) {
     typeof setNoteVisible === "function" ? setNoteVisible(false) : null;
     typeof setWarningVisible === "function" ? setWarningVisible(false) : null;
   };
+  const modalView = () => {
+    return (
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+        //   style={{ backgroundColor: theme.colors.surface }}
+      >
+        <Pressable
+          onPress={() => {
+            setModalVisible(false);
+          }}
+          style={{
+            margin: 20,
 
+            // alignItems: "center",
+            // height: "100%",
+            padding: 20,
+            backgroundColor: theme.colors.surface,
+            borderRadius: 20,
+            shadowColor: "#000",
+            elevation: 10,
+          }}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              textAlignVertical: "center",
+              fontSize: 18,
+              backgroundColor: theme.colors.surface,
+              marginVertical: 8,
+              lineHeight: 25,
+            }}
+          >
+            {AboutText}
+          </Text>
+        </Pressable>
+      </Modal>
+    );
+  };
   return (
     <Background>
       {/* <View style={styles.View0}> */}
@@ -30,10 +78,16 @@ export default function StartScreen({ navigation }) {
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
       >
         <View style={styles.View2}>
-          <Image
-            style={{ width: 300, height: 300, marginVertical: 10 }}
-            source={require("../assets/logoWtext.png")}
-          />
+          <TouchableOpacity
+            onPress={() => {
+              setModalVisible(true);
+            }}
+          >
+            <Image
+              style={{ width: 300, height: 300, marginVertical: 10 }}
+              source={require("../assets/logoWtext.png")}
+            />
+          </TouchableOpacity>
           <Button
             mode="contained"
             onPress={() => navigation.navigate("LoginScreen")}
@@ -48,7 +102,7 @@ export default function StartScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* </View> */}
+      {modalView()}
       <Error
         visible={errorVisible}
         title={errorTitle}

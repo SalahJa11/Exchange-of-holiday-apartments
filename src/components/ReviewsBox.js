@@ -14,7 +14,7 @@ import { useState } from "react";
 import { getApartmentOwner } from "../config/cloud";
 import { Rating } from "react-native-ratings";
 
-export default function ReviewsBox({ array, navigation, toClose }) {
+export default function ReviewsBox({ array, navigation, toClose, extended }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [comment, setComment] = useState({
@@ -111,6 +111,7 @@ export default function ReviewsBox({ array, navigation, toClose }) {
         style={{
           alignItems: "center",
           justifyContent: "center",
+          flexDirection: "row",
         }}
       >
         <Text
@@ -123,6 +124,17 @@ export default function ReviewsBox({ array, navigation, toClose }) {
         >
           Reviews
         </Text>
+        <TouchableOpacity
+          onPress={() => {
+            typeof toClose === "function" ? toClose() : undefined;
+            navigation.navigate("Reviews", { array: array });
+          }}
+        >
+          <Image
+            source={require("../assets/link.png")}
+            style={{ marginLeft: 10, width: 25, height: 25 }}
+          />
+        </TouchableOpacity>
       </View>
     );
     const modalView = () => {
@@ -223,10 +235,10 @@ export default function ReviewsBox({ array, navigation, toClose }) {
     };
     return (
       <>
-        {Title}
+        {!extended && Title}
         <ScrollView
           nestedScrollEnabled={true}
-          style={{ maxHeight: 200, width: "100%" }}
+          style={{ maxHeight: extended ? "100%" : 200, width: "100%" }}
           showsVerticalScrollIndicator={false}
         >
           {finalResult}

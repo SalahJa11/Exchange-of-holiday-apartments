@@ -23,6 +23,7 @@ import {
   Chating,
   Rating,
   SearchUsersAndApartments,
+  Reviews,
 } from "./src/screens";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -105,6 +106,7 @@ export default function App() {
           component={SearchUsersAndApartments}
         />
         <Stack.Screen name="Rating" component={Rating} />
+        <Stack.Screen name="Reviews" component={Reviews} />
       </Stack.Navigator>
     );
   };

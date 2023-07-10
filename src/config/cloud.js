@@ -74,6 +74,19 @@ export async function createNewUser(
 export async function serverTime() {
   return await serverTimestamp();
 }
+export async function localIsraelTime() {
+  try {
+    const response = await fetch(
+      "http://worldtimeapi.org/api/timezone/Asia/Jerusalem"
+    );
+    const data = await response.json();
+    const localTime = new Date(data.datetime);
+    return localTime;
+  } catch (error) {
+    console.error("Error fetching local time:", error);
+    return new Date();
+  }
+}
 export async function getApartmentAllRates(id) {
   const docRef = doc(db, "apartments", id);
   const res = await getDoc(docRef);
@@ -479,7 +492,9 @@ export async function getApartmentOwner(userId) {
 export async function getAllListedApartments() {
   const finalResult = [];
   try {
-    const nowDate = Timestamp.fromDate(new Date());
+    const nowDate = Timestamp.fromDate(
+      new Date(new Date().setHours(0, 0, 0, 0))
+    );
     const q = query(
       collection(db, "apartments"),
       where("ToDate", ">", nowDate)
