@@ -188,22 +188,34 @@ export default function Chating({ navigation, route }) {
     );
   };
   return (
-    <>
-      <GiftedChat
-        messages={messages}
-        showAvatarForEveryMessage={false}
-        onSend={(messages) => onSend(messages)}
-        renderInputToolbar={(props) => customtInputToolbar(props)}
-        renderSystemMessage={(props) => customSystemMessage(props)}
-        renderBubble={renderBubble}
-        user={{
-          _id: getMyEmail(),
-          name: profile.name,
-          avatar: profile.image,
-        }}
-      />
-      {Platform.OS === "android" && <KeyboardAvoidingView behavior="height" />}
-    </>
+    <View style={{ height: "100%", width: "100%", flexGrow: 1, flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        keyboardVerticalOffset={75}
+        style={{ flex: 1 }}
+      >
+        <GiftedChat
+          messages={messages}
+          showAvatarForEveryMessage={false}
+          onSend={(messages) => onSend(messages)}
+          renderInputToolbar={(props) => customtInputToolbar(props)}
+          renderSystemMessage={(props) => customSystemMessage(props)}
+          renderBubble={renderBubble}
+          alwaysShowSend
+          user={{
+            _id: getMyEmail(),
+            name: profile.name,
+            avatar: profile.image,
+          }}
+        />
+      </KeyboardAvoidingView>
+      {/* {Platform.OS === "android" && (
+        <KeyboardAvoidingView
+          behavior="padding"
+          style={{ backgroundColor: "red", height: 50 }}
+        />
+      )} */}
+    </View>
   );
 }
 const styles = StyleSheet.create({});
